@@ -52,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Continue updating power metrics to other clients if one client disconnects.
 - Freed 19k of ram by consolidating tasks and using timers instead of delays.
 - Updated baud rate to 115200 to ensure compatibility with other ESP32 variants.
+- Added a final test to check if ERG mode has commanded a move in the proper direction. 
 - Added ability to send target watts through the custom characteristic. 
 
 ### Hardware

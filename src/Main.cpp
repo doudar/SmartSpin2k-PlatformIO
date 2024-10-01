@@ -386,8 +386,17 @@ void SS2K::moveStepper() {
     ss2k->stepperIsRunning = stepper->isRunning();
     ss2k->currentPosition  = stepper->getCurrentPosition();
     if (!ss2k->externalControl) {
-      if ((rtConfig->getFTMSMode() == FitnessMachineControlPointProcedure::SetTargetPower) ||
-          (rtConfig->getFTMSMode() == FitnessMachineControlPointProcedure::SetTargetResistanceLevel)) {
+      if ((rtConfig->getFTMSMode() == FitnessMachineControlPointProcedure::SetTargetPower)) {
+        // don't drive lower out of bounds. This is a final test that should never happen. 
+        if ((stepper->getCurrentPosition() > rtConfig->getTargetIncline()) && (rtConfig->watts.getValue() < rtConfig->watts.getTarget())) {
+          rtConfig->setTargetIncline(stepper->getCurrentPosition() + 1);
+        }
+        // don't drive higher out of bounds. This is a final test that should never happen. 
+        if ((stepper->getCurrentPosition() < rtConfig->getTargetIncline()) && (rtConfig->watts.getValue() > rtConfig->watts.getTarget())) {
+          rtConfig->setTargetIncline(stepper->getCurrentPosition() - 1);
+        }
+        ss2k->targetPosition = rtConfig->getTargetIncline();
+      } else if (rtConfig->getFTMSMode() == FitnessMachineControlPointProcedure::SetTargetResistanceLevel) {
         ss2k->targetPosition = rtConfig->getTargetIncline();
       } else {
         // Simulation Mode
@@ -423,16 +432,16 @@ void SS2K::moveStepper() {
           stepper->moveTo(ss2k->targetPosition);
         }
       }
-
-    } else {
+    } else {  // Normal move code for non-Peloton
       if ((ss2k->targetPosition >= rtConfig->getMinStep()) && (ss2k->targetPosition <= rtConfig->getMaxStep())) {
         stepper->moveTo(ss2k->targetPosition);
       } else if (ss2k->targetPosition <= rtConfig->getMinStep()) {  // Limit Stepper to Min Position
-        stepper->moveTo(rtConfig->getMinStep());
+        stepper->moveTo(rtConfig->getMinStep() + 1);
       } else {  // Limit Stepper to Max Position
-        stepper->moveTo(rtConfig->getMaxStep());
+        stepper->moveTo(rtConfig->getMaxStep() - 1);
       }
     }
+    //Sync external object
     rtConfig->setCurrentIncline((float)stepper->getCurrentPosition());
 
     if (connectedClientCount() > 0) {
