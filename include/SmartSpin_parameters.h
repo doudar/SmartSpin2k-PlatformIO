@@ -126,6 +126,7 @@ class userParameters {
   bool udpLogEnabled = false;
   int32_t hMin = INT32_MIN;
   int32_t hMax = INT32_MIN;
+  int32_t totalTravel; 
 
   bool FTMSControlPointWrite = false;
   String ssid;
@@ -195,6 +196,9 @@ class userParameters {
 
   void setShifterDir(bool shd) { shifterDir = shd; }
   bool getShifterDir() { return shifterDir; }
+
+  void setTotalTravel(int tT) { totalTravel = tT; }
+  bool getTotalTravel() { return totalTravel; }
 
   void setUdpLogEnabled(bool enabled) { udpLogEnabled = enabled; }
   bool getUdpLogEnabled() { return udpLogEnabled; }
