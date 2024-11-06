@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Hardware
+
+
+## [24.10.30]
+
+### Added
+
 - Added pass through shifting in both ERG and SIM mode.
 - Refined and added BLE custom characteristics for upcoming configuration app.
 - Added CSC Service to BLE server.
