@@ -535,7 +535,77 @@ void SS2K::setupTMCStepperDriver() {
   // power down after standstill is detected
   driver.TPOWERDOWN(128);
   driver.toff(5);
-  ss2k->updateStealthChop();
+  this->updateStealthChop();
+  driver.irun(currentBoard.pwrScaler);
+  driver.ihold((uint8_t)(currentBoard.pwrScaler * .5));  // hold current % 0-DRIVER_MAX_PWR_SCALER
+  this->updateStepperSpeed();
+  this->updateStepperPower();
+  this->setCurrentPosition(stepper->getCurrentPosition());
+}
+
+void SS2K::goHome(bool bothDirections) {
+  if (currentBoard.name != r2_NAME) {
+    SS2K_LOG(MAIN_LOG_TAG, "Board Doesn't support homing");
+    return;
+  }
+  SS2K_LOG(MAIN_LOG_TAG, "Homing...");
+  int _IFCNT = driver.IFCNT();  // Number of UART commands rx by driver
+  SS2K_LOG(MAIN_LOG_TAG, "Updating driver...");
+  updateStepperPower(100);
+  vTaskDelay(50 / portTICK_PERIOD_MS);
+  driver.irun(2);  // low power
+  vTaskDelay(50 / portTICK_PERIOD_MS);
+  driver.ihold((uint8_t)(1));
+  vTaskDelay(50 / portTICK_PERIOD_MS);
+  this->updateStepperSpeed(1500);
+  bool stalled  = false;
+  int threshold = 0;
+  vTaskDelay(1000 / portTICK_PERIOD_MS);
+  if (bothDirections) {
+    stepper->runForward();
+    vTaskDelay(250 / portTICK_PERIOD_MS);  // wait until stable
+    threshold = driver.SG_RESULT();        // take reading
+    Serial.printf("%d ", driver.SG_RESULT());
+    vTaskDelay(250 / portTICK_PERIOD_MS);
+    while (!stalled) {
+      // stalled = (threshold < 200); // Were we already at the stop?
+      stalled = (driver.SG_RESULT() < threshold - 100);
+    }
+    stalled = false;
+    stepper->forceStop();
+    stepper->disableOutputs();
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
+    rtConfig->setMaxStep(stepper->getCurrentPosition() - 200);
+    SS2K_LOG(MAIN_LOG_TAG, "Max Position found: %d.", rtConfig->getMaxStep());
+    stepper->enableOutputs();
+  }
+  stepper->runBackward();
+  vTaskDelay(250 / portTICK_PERIOD_MS);
+  threshold = driver.SG_RESULT();
+  Serial.printf("%d ", driver.SG_RESULT());
+  vTaskDelay(250 / portTICK_PERIOD_MS);
+  while (!stalled) {
+    stalled = (driver.SG_RESULT() < threshold - 75);
+  }
+  stepper->forceStop();
+  stepper->disableOutputs();
+  vTaskDelay(100 / portTICK_PERIOD_MS);
+  stepper->setCurrentPosition((int32_t)0);
+  ss2k->setTargetPosition(0);
+  rtConfig->setMinStep(stepper->getCurrentPosition() + userConfig->getShiftStep());
+  SS2K_LOG(MAIN_LOG_TAG, "Min Position found: %d.", rtConfig->getMinStep());
+  stepper->enableOutputs();
+
+  // Start Saving Settings
+  if (bothDirections) {
+    userConfig->setHMin(rtConfig->getMinStep());
+    userConfig->setHMax(rtConfig->getMaxStep());
+  }
+  // In case this was only one direction homing.
+  rtConfig->setMaxStep(userConfig->getHMax());
+  userConfig->saveToLittleFS();
+  rtConfig->setHomed(true);
+  this->setupTMCStepperDriver(true);
 }
 
 // Applies current power to driver
