@@ -57,6 +57,7 @@ class RuntimeParameters {
  private:
   double targetIncline = 0.0;
   float simulatedSpeed = 0.0;
+  float steeringAngle = 0.0;  // Range: -35 to 35 degrees
   uint8_t FTMSMode     = 0x00;
   int shifterPosition  = 0;
   bool homed           = false;
@@ -79,6 +80,14 @@ class RuntimeParameters {
 
   void setSimulatedSpeed(float spd) { simulatedSpeed = spd; }
   float getSimulatedSpeed() { return simulatedSpeed; }
+
+  void setSteeringAngle(float angle) { 
+    // Clamp steering angle between -35 and 35 degrees
+    if (angle < -35.0) angle = -35.0;
+    if (angle > 35.0) angle = 35.0;
+    steeringAngle = angle; 
+  }
+  float getSteeringAngle() { return steeringAngle; }
 
   void setFTMSMode(uint8_t mde) { FTMSMode = mde; }
   uint8_t getFTMSMode() { return FTMSMode; }

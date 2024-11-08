@@ -739,6 +739,21 @@ void BLE_ss2kCustomCharacteristic::process(std::string rxValue) {
         logBufLength += snprintf(logBuf + logBufLength, kLogBufCapacity - logBufLength, " (%f)", userConfig->getHMax());
       }
       break;
+    case BLE_steeringAngle: {  // 0x2C
+      logBufLength += snprintf(logBuf + logBufLength, kLogBufCapacity - logBufLength, "<-steeringAngle");
+      int angle = rtConfig->getSteeringAngle() * 10;  // Convert to fixed point
+      if (rxValue[0] == cc_read) {
+        returnValue[0] = cc_success;
+        returnValue[2] = (uint8_t)(angle & 0xff);
+        returnValue[3] = (uint8_t)(angle >> 8);
+        returnLength += 2;
+      }
+      if (rxValue[0] == cc_write) {
+        returnValue[0] = cc_success;
+        rtConfig->setSteeringAngle((bytes_to_u16(rxValue[3], rxValue[2])) / 10.0);  // Convert back from fixed point
+        logBufLength += snprintf(logBuf + logBufLength, kLogBufCapacity - logBufLength, "(%f)", rtConfig->getSteeringAngle());
+      }
+    } break;
   }
 
   SS2K_LOG(CUSTOM_CHAR_LOG_TAG, "%s", logBuf);
@@ -894,10 +909,14 @@ void BLE_ss2kCustomCharacteristic::parseNemit() {
     BLE_ss2kCustomCharacteristic::notify(BLE_hMin);
     return;
   }
-
   if (userConfig->getHMax() != _oldParams.getHMax()) {
     _oldParams.setHMax(userConfig->getHMax());
     BLE_ss2kCustomCharacteristic::notify(BLE_hMax);
+    return;
+  }
+  if (rtConfig->getSteeringAngle() != _oldRTParams.getSteeringAngle()) {
+    _oldRTParams.setSteeringAngle(rtConfig->getSteeringAngle());
+    BLE_ss2kCustomCharacteristic::notify(BLE_steeringAngle);
     return;
   }
 }

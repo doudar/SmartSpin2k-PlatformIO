@@ -54,8 +54,9 @@ class SpinBLEServer {
     bool CyclingPowerMeasurement : 1;
     bool IndoorBikeData : 1;
     bool CyclingSpeedCadence : 1;
+    bool SteeringAngle : 1;
   } clientSubscribed;
-  int spinDownFlag     = 0;
+  int spinDownFlag      = 0;
   NimBLEServer *pServer = nullptr;
   void setClientSubscribed(NimBLEUUID pUUID, bool subscribe);
   void notifyShift();

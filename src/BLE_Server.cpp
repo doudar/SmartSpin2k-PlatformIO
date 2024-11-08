@@ -15,6 +15,7 @@
 #include "BLE_Custom_Characteristic.h"
 #include "BLE_Device_Information_Service.h"
 #include "BLE_Wattbike_Service.h"
+#include "BLE_Steering_Service.h"
 
 #include <ArduinoJson.h>
 #include <Constants.h>
@@ -34,6 +35,7 @@ BLE_Fitness_Machine_Service fitnessMachineService;
 BLE_ss2kCustomCharacteristic ss2kCustomCharacteristic;
 BLE_Device_Information_Service deviceInformationService;
 BLE_Wattbike_Service wattbikeService;
+BLE_SteeringService steeringService;
 
 void startBLEServer() {
   // Server Setup
@@ -49,6 +51,7 @@ void startBLEServer() {
   ss2kCustomCharacteristic.setupService(spinBLEServer.pServer);
   deviceInformationService.setupService(spinBLEServer.pServer);
   wattbikeService.setupService(spinBLEServer.pServer);  // No callback needed
+  steeringService.setupService(spinBLEServer.pServer);
 
   BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
   // const std::string fitnessData = {0b00000001, 0b00100000, 0b00000000};
@@ -60,6 +63,7 @@ void startBLEServer() {
   pAdvertising->addServiceUUID(HEARTSERVICE_UUID);
   pAdvertising->addServiceUUID(SMARTSPIN2K_SERVICE_UUID);
   pAdvertising->addServiceUUID(WATTBIKE_SERVICE_UUID);
+  pAdvertising->addServiceUUID(STEERING_SERVICE_UUID);
   pAdvertising->setMaxInterval(250);
   pAdvertising->setMinInterval(160);
   pAdvertising->setScanResponse(true);
@@ -79,6 +83,7 @@ void SpinBLEServer::update() {
   cyclingSpeedCadenceService.update();
   fitnessMachineService.update();
   wattbikeService.parseNemit();  // Changed from update() to parseNemit()
+  steeringService.update();
 }
 
 double SpinBLEServer::calculateSpeed() {
@@ -197,6 +202,8 @@ void SpinBLEServer::setClientSubscribed(NimBLEUUID pUUID, bool subscribe) {
     spinBLEServer.clientSubscribed.IndoorBikeData = subscribe;
   } else if (pUUID == CSCMEASUREMENT_UUID) {
     spinBLEServer.clientSubscribed.CyclingSpeedCadence = subscribe;
+  } else if (pUUID == STEERING_ANGLE_CHAR_UUID) {
+    spinBLEServer.clientSubscribed.SteeringAngle = subscribe;
   }
 }
 

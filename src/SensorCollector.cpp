@@ -15,6 +15,8 @@
 SensorDataFactory sensorDataFactory;
 
 void collectAndSet(NimBLEUUID charUUID, NimBLEUUID serviceUUID, NimBLEAddress address, uint8_t *pData, size_t length) {
+  static long int timer      = millis();
+  static long int lastTime   = millis();
   const int kLogBufMaxLength = 250;
   char logBuf[kLogBufMaxLength];
   SS2K_LOGD(BLE_COMMON_LOG_TAG, "Data length: %d", length);
@@ -75,8 +77,13 @@ void collectAndSet(NimBLEUUID charUUID, NimBLEUUID serviceUUID, NimBLEAddress ad
   logBufLength += snprintf(logBuf + logBufLength, kLogBufMaxLength - logBufLength, " POS(%d)", ss2k->getCurrentPosition());
   strncat(logBuf + logBufLength, " ]", kLogBufMaxLength - logBufLength);
 
+  // Peloton data screams, so only log one per second.
+  if ((charUUID == PELOTON_DATA_UUID) && (millis() - lastTime < 1000)) return;
+
   SS2K_LOG(BLE_COMMON_LOG_TAG, "%s", logBuf);
 
+  if (charUUID == PELOTON_DATA_UUID) lastTime = millis();
+  
 #ifdef USE_TELEGRAM
   SEND_TO_TELEGRAM(String(logBuf));
 #endif
