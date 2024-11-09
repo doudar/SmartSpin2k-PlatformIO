@@ -601,14 +601,15 @@ void SS2K::goHome(bool bothDirections) {
   stepper->setCurrentPosition((int32_t)0);
   rtConfig->setMinStep(stepper->getCurrentPosition() + userConfig->getShiftStep());
   SS2K_LOG(MAIN_LOG_TAG, "Min Position found: %d.", rtConfig->getMinStep());
-  rtConfig->setMinResistance(rtConfig->resistance.getValue());
+  rtConfig->setMinResistance(rtConfig->resistance.getValue()); 
   stepper->enableOutputs();
 
   // Start Saving Settings
   if (bothDirections) {
     userConfig->setHMin(rtConfig->getMinStep());
     userConfig->setHMax(rtConfig->getMaxStep());
-    userConfig->setTotalTravel(userConfig->getHMax() - userConfig->getHMin()); 
+    rtConfig->setTotalTravel(userConfig->getHMax() - userConfig->getHMin()); 
+    rtConfig->setCalculatedTotalTravel(rtConfig->getTotalTravel()/100); 
   }
   // In case this was only one direction homing.
   rtConfig->setMaxStep(userConfig->getHMax());

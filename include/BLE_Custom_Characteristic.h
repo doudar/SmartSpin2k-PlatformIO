@@ -61,6 +61,7 @@ const uint8_t BLE_simulateTargetWatts   = 0x29;  // are we sending target watts
 const uint8_t BLE_hMin                  = 0x2A;  // Minimum homing value
 const uint8_t BLE_hMax                  = 0x2B;  // Maximum homing value
 const uint8_t BLE_totalTravel           = 0x2C;  // Total travel
+const uint8_t BLE_calculatedTotalTravel  = 0x2D;  // Calculated Total Travel 
 
 class BLE_ss2kCustomCharacteristic {
  public:
