@@ -88,7 +88,7 @@ class RuntimeParameters {
   void setShifterPosition(int sp) { shifterPosition = sp; }
   int getShifterPosition() { return shifterPosition; }
 
-  void setHomed(int hmd) { homed = hmd; }
+  void setHomed(bool hmd) { homed = hmd; }
   int getHomed() { return homed; }
 
   void setMinStep(int ms) { minStep = ms; }

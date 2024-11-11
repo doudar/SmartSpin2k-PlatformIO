@@ -70,6 +70,10 @@ void PowerTable::runERG() {
 
     if (ss2k->resetPowerTableFlag) {
       powerTable->reset();
+      userConfig->setHMin(INT32_MIN);
+      userConfig->setHMax(INT32_MIN);
+      rtConfig->setHomed(false);
+      userConfig->saveToLittleFS();
     }
     loopCounter++;
   }
@@ -847,6 +851,9 @@ bool PowerTable::_manageSaveState() {
     file.read((uint8_t*)&version, sizeof(version));
     int savedQuality;
     file.read((uint8_t*)&savedQuality, sizeof(savedQuality));
+    bool savedHomed;
+    file.read((uint8_t*)&savedHomed, sizeof(savedHomed));
+
     if (version != TABLE_VERSION) {
       SS2K_LOG(POWERTABLE_LOG_TAG, "Expected power table version %d, found version %d", TABLE_VERSION, version);
       file.close();
@@ -862,32 +869,35 @@ bool PowerTable::_manageSaveState() {
       this->_save();
     }
 
-    SS2K_LOG(POWERTABLE_LOG_TAG, "Loading power table version %d, Size %d", version, savedQuality);
+    SS2K_LOG(POWERTABLE_LOG_TAG, "Loading power table version %d, Size %d, Homed %d", version, savedQuality, savedHomed);
 
-    // Initialize a counter for reliable positions
-    int reliablePositions = 0;
+    // If both current and saved tables were created with homing, we can skip position reliability checks
+    bool canSkipReliabilityChecks = savedHomed && rtConfig->getHomed();
+    
+    if (!canSkipReliabilityChecks) {
+      // Initialize a counter for reliable positions
+      int reliablePositions = 0;
 
-    // Check if we have at least 3 reliable positions in the active table in order to determine a reliable offset to load the saved table
-    for (int i = 0; i < POWERTABLE_CAD_SIZE; i++) {
-      for (int j = 0; j < POWERTABLE_WATT_SIZE; j++) {
-        int16_t savedTargetPosition = INT16_MIN;
-        int8_t savedReadings        = 0;
-        file.read((uint8_t*)&savedTargetPosition, sizeof(savedTargetPosition));
-        file.read((uint8_t*)&savedReadings, sizeof(savedReadings));
-        // Does the saved file have a position that the active session has also recorded?
-        // We start comparing at watt position 3 (j>2) because low resistance positions are notoriously unreliable.
-        if ((j > 2) && (this->tableRow[i].tableEntry[j].targetPosition != INT16_MIN) && (this->tableRow[i].tableEntry[j].readings > MINIMUM_RELIABLE_POSITIONS) &&
-            (savedReadings > 0)) {
-          reliablePositions++;
+      // Check if we have at least 3 reliable positions in the active table in order to determine a reliable offset to load the saved table
+      for (int i = 0; i < POWERTABLE_CAD_SIZE; i++) {
+        for (int j = 0; j < POWERTABLE_WATT_SIZE; j++) {
+          int16_t savedTargetPosition = INT16_MIN;
+          int8_t savedReadings        = 0;
+          file.read((uint8_t*)&savedTargetPosition, sizeof(savedTargetPosition));
+          file.read((uint8_t*)&savedReadings, sizeof(savedReadings));
+          // Does the saved file have a position that the active session has also recorded?
+          // We start comparing at watt position 3 (j>2) because low resistance positions are notoriously unreliable.
+          if ((j > 2) && (this->tableRow[i].tableEntry[j].targetPosition != INT16_MIN) && (this->tableRow[i].tableEntry[j].readings > MINIMUM_RELIABLE_POSITIONS) &&
+              (savedReadings > 0)) {
+            reliablePositions++;
+          }
         }
       }
-    }
-    if (reliablePositions < MINIMUM_RELIABLE_POSITIONS) {  // Do we have enough active data in order to calculate a (good) offset when we load the new table?
-      SS2K_LOG(POWERTABLE_LOG_TAG, "Not enough matching positions to load the Power Table. %d of %d needed.", reliablePositions, MINIMUM_RELIABLE_POSITIONS);
-      file.close();
-      return false;
-    } else {
-      // continue loading
+      if (reliablePositions < MINIMUM_RELIABLE_POSITIONS) {  // Do we have enough active data in order to calculate a (good) offset when we load the new table?
+        SS2K_LOG(POWERTABLE_LOG_TAG, "Not enough matching positions to load the Power Table. %d of %d needed.", reliablePositions, MINIMUM_RELIABLE_POSITIONS);
+        file.close();
+        return false;
+      }
     }
     file.close();
 
@@ -903,44 +913,62 @@ bool PowerTable::_manageSaveState() {
     // get these reads done, so that we're in the right position to read the data from the file.
     file.read((uint8_t*)&version, sizeof(version));
     file.read((uint8_t*)&savedQuality, sizeof(savedQuality));
-    std::vector<float> offsetDifferences;
-
-    reliablePositions = 0;
-    // Read table entries and calculate offsets
-    for (int i = 0; i < POWERTABLE_CAD_SIZE; i++) {
-      for (int j = 0; j < POWERTABLE_WATT_SIZE; j++) {
-        int16_t savedTargetPosition = INT16_MIN;
-        int8_t savedReadings        = 0;
-        file.read((uint8_t*)&savedTargetPosition, sizeof(savedTargetPosition));
-        file.read((uint8_t*)&savedReadings, sizeof(savedReadings));
-        if ((this->tableRow[i].tableEntry[j].targetPosition != INT16_MIN) && (savedTargetPosition != INT16_MIN) && (savedReadings > 0) &&
-            (this->tableRow[i].tableEntry[j].readings > MINIMUM_RELIABLE_POSITIONS)) {
-          int offset = this->tableRow[i].tableEntry[j].targetPosition - savedTargetPosition;
-          offsetDifferences.push_back(offset);
-          SS2K_LOG(POWERTABLE_LOG_TAG, "offset %d", offset);
-          reliablePositions++;
+    file.read((uint8_t*)&savedHomed, sizeof(savedHomed));
+    
+    float averageOffset = 0;
+    if (!canSkipReliabilityChecks) {
+      std::vector<float> offsetDifferences;
+      int reliablePositions = 0;
+      // Read table entries and calculate offsets
+      for (int i = 0; i < POWERTABLE_CAD_SIZE; i++) {
+        for (int j = 0; j < POWERTABLE_WATT_SIZE; j++) {
+          int16_t savedTargetPosition = INT16_MIN;
+          int8_t savedReadings        = 0;
+          file.read((uint8_t*)&savedTargetPosition, sizeof(savedTargetPosition));
+          file.read((uint8_t*)&savedReadings, sizeof(savedReadings));
+          if ((this->tableRow[i].tableEntry[j].targetPosition != INT16_MIN) && (savedTargetPosition != INT16_MIN) && (savedReadings > 0) &&
+              (this->tableRow[i].tableEntry[j].readings > MINIMUM_RELIABLE_POSITIONS)) {
+            int offset = this->tableRow[i].tableEntry[j].targetPosition - savedTargetPosition;
+            offsetDifferences.push_back(offset);
+            SS2K_LOG(POWERTABLE_LOG_TAG, "offset %d", offset);
+            reliablePositions++;
+          }
+          this->tableRow[i].tableEntry[j].targetPosition = savedTargetPosition;
+          this->tableRow[i].tableEntry[j].readings       = savedReadings;
         }
-        this->tableRow[i].tableEntry[j].targetPosition = savedTargetPosition;
-        this->tableRow[i].tableEntry[j].readings       = savedReadings;
-        // SS2K_LOG(POWERTABLE_LOG_TAG, "Position %d, %d, Target %d, Readings %d, loaded", i, j, this->tableRow[i].tableEntry[j].targetPosition,
-        //          this->tableRow[i].tableEntry[j].readings);
       }
+      averageOffset = std::accumulate(offsetDifferences.begin(), offsetDifferences.end(), 0.0) / offsetDifferences.size();
+    } else {
+      // If both tables were created with homing, just load the values directly
+      for (int i = 0; i < POWERTABLE_CAD_SIZE; i++) {
+        for (int j = 0; j < POWERTABLE_WATT_SIZE; j++) {
+          int16_t savedTargetPosition = INT16_MIN;
+          int8_t savedReadings        = 0;
+          file.read((uint8_t*)&savedTargetPosition, sizeof(savedTargetPosition));
+          file.read((uint8_t*)&savedReadings, sizeof(savedReadings));
+          this->tableRow[i].tableEntry[j].targetPosition = savedTargetPosition;
+          this->tableRow[i].tableEntry[j].readings       = savedReadings;
+        }
+      }
+      SS2K_LOG(POWERTABLE_LOG_TAG, "Both tables were created with homing, loaded values directly");
     }
 
     file.close();
-    float averageOffset = std::accumulate(offsetDifferences.begin(), offsetDifferences.end(), 0.0) / offsetDifferences.size();
 
-    // Apply the offset to all loaded positions except for INT16_MIN values
-    for (int i = 0; i < POWERTABLE_CAD_SIZE; i++) {
-      for (int j = 0; j < POWERTABLE_WATT_SIZE; j++) {
-        if (this->tableRow[i].tableEntry[j].targetPosition != INT16_MIN) {
-          this->tableRow[i].tableEntry[j].targetPosition += averageOffset;
+    // Apply the offset if needed
+    if (!canSkipReliabilityChecks) {
+      for (int i = 0; i < POWERTABLE_CAD_SIZE; i++) {
+        for (int j = 0; j < POWERTABLE_WATT_SIZE; j++) {
+          if (this->tableRow[i].tableEntry[j].targetPosition != INT16_MIN) {
+            this->tableRow[i].tableEntry[j].targetPosition += averageOffset;
+          }
         }
       }
+      SS2K_LOG(POWERTABLE_LOG_TAG, "Power Table loaded with an offset of %d.", averageOffset);
     }
+    
     // set the flag so it isn't loaded again this session.
     this->_hasBeenLoadedThisSession = true;
-    SS2K_LOG(POWERTABLE_LOG_TAG, "Power Table loaded with an offset of %d.", averageOffset);
   }
 
   // Implement saving on a timer
@@ -969,6 +997,10 @@ bool PowerTable::_save() {
 
   int size = getNumReadings();
   file.write((uint8_t*)&size, sizeof(size));
+
+  // Write homing state
+  bool isHomed = rtConfig->getHomed();
+  file.write((uint8_t*)&isHomed, sizeof(isHomed));
 
   // Write table entries
   for (int i = 0; i < POWERTABLE_CAD_SIZE; i++) {

@@ -96,9 +96,6 @@ void BLECommunications() {
 
     if (connectedClientCount() > 0 && !ss2k->isUpdating) {
       spinBLEServer.update();
-      // if (spinDown()) {
-      //  Possibly do something in the future. Right now we just fake the spin down.
-      // }
 
 #ifdef INTERNAL_ERG_4EXT_FTMS
       uint8_t test[] = {FitnessMachineControlPointProcedure::SetIndoorBikeSimulationParameters, 0x00, 0x00, 0x00, 0x00, 0x28, 0x33};

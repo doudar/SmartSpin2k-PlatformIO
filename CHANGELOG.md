@@ -10,10 +10,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
+- Multiple Homing refinements.
+- Working with resistance mode on QZ & Peloton
 
 ### Hardware
 
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [24.11.7]
+
+### Added
+
+### Changed
+- Homing refinements.
+- Resistance shifting improvement.
+- Reduced Peloton logging to 1/sec.
+
+### Hardware
+
+## [24.11.5]
+
+### Added
+- Knob homing if calibrate trainer is selected in an app.
+
+### Changed
+- Added backing off of the stop before we test to prevent runaway grinding during homing. 
+- User can abort homing by pressing shifter. 
+
+### Hardware
 
 ## [24.10.30]
 
