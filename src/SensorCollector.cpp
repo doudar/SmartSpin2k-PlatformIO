@@ -64,12 +64,7 @@ void collectAndSet(NimBLEUUID charUUID, NimBLEUUID serviceUUID, NimBLEAddress ad
   if (sensorData->hasResistance()) {
     if ((rtConfig->getMaxResistance() == MAX_PELOTON_RESISTANCE) && (charUUID != PELOTON_DATA_UUID)) {
       // Peloton connected but using BLE Power Meter. So skip resistance for UUID's that aren't Peloton.
-    } else if(rtConfig->getHomed()){
-      int resistance = rtConfig->getMaxResistance() *(ss2k->getCurrentPosition()/rtConfig->getCalculatedTotalTravel()); //might be total travel without dividing by 100
-      rtConfig->resistance.setValue(resistance); 
-      logBufLength += snprintf(logBuf + logBufLength, kLogBufMaxLength - logBufLength, " RS(%d)", resistance % 1000);
-    }
-    else {
+    } else {
       int resistance = sensorData->getResistance();
       rtConfig->resistance.setValue(resistance);
       logBufLength += snprintf(logBuf + logBufLength, kLogBufMaxLength - logBufLength, " RS(%d)", resistance % 1000);
