@@ -38,6 +38,8 @@ String RuntimeParameters::returnJSON() {
   doc["maxStep"]          = this->maxStep;
   doc["minResistance"]    = this->minResistance;
   doc["maxResistance"]    = this->maxResistance;
+  doc["totalTravel"]      = this->totalTravel; 
+  doc["calculatedTotalTravel"] = this->calculatedTotalTravel; 
 
   String output;
   serializeJson(doc, output);

@@ -65,6 +65,8 @@ class RuntimeParameters {
   int minResistance    = -DEFAULT_RESISTANCE_RANGE;
   int maxResistance    = DEFAULT_RESISTANCE_RANGE;
   bool simTargetWatts  = false;
+  int32_t totalTravel  = INT32_MIN;
+  int16_t calculatedTotalTravel = INT16_MIN; 
 
  public:
   Measurement watts;
@@ -103,6 +105,12 @@ class RuntimeParameters {
 
   void setMaxResistance(int max) { maxResistance = max; }
   int getMaxResistance() { return maxResistance; }
+
+  void setTotalTravel(int tT) { totalTravel = tT; }
+  int getTotalTravel() { return totalTravel; }
+
+  void setCalculatedTotalTravel(int ctT) { calculatedTotalTravel = ctT; }
+  int getCalculatedTotalTravel() { return calculatedTotalTravel; }
 
   String returnJSON();
 };

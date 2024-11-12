@@ -739,6 +739,40 @@ void BLE_ss2kCustomCharacteristic::process(std::string rxValue) {
         logBufLength += snprintf(logBuf + logBufLength, kLogBufCapacity - logBufLength, " (%f)", userConfig->getHMax());
       }
       break;
+
+      case BLE_totalTravel: 
+      logBufLength += snprintf(logBuf + logBufLength, kLogBufCapacity - logBufLength, "<-totalTravel");
+      if (rxValue[0] == cc_read) {
+        returnValue[0] = cc_success;
+        returnValue[2] = (uint8_t)(rtConfig->getTotalTravel() & 0xff);
+        returnValue[3] = (uint8_t)(rtConfig->getTotalTravel() >> 8);
+        returnValue[4] = (uint8_t)(rtConfig->getTotalTravel() >> 16);
+        returnValue[5] = (uint8_t)(rtConfig->getTotalTravel() >> 24);
+        returnLength += 4;
+      }
+      if (rxValue[0] == cc_write) {
+        returnValue[0] = cc_success;
+        ss2k->setTargetPosition(int32_t((uint8_t)(rxValue[2]) << 0 | (uint8_t)(rxValue[3]) << 8 | (uint8_t)(rxValue[4]) << 16 | (uint8_t)(rxValue[5]) << 24));
+        logBufLength += snprintf(logBuf + logBufLength, kLogBufCapacity - logBufLength, " (%f)", rtConfig->getTotalTravel());
+      }
+      break;
+
+      case BLE_calculatedTotalTravel: 
+      logBufLength += snprintf(logBuf + logBufLength, kLogBufCapacity - logBufLength, "<-calculatedTotalTravel");
+      if (rxValue[0] == cc_read) {
+        returnValue[0] = cc_success;
+        returnValue[2] = (uint8_t)(rtConfig->getCalculatedTotalTravel() & 0xff);
+        returnValue[3] = (uint8_t)(rtConfig->getCalculatedTotalTravel() >> 8);
+        returnValue[4] = (uint8_t)(rtConfig->getCalculatedTotalTravel() >> 16);
+        returnValue[5] = (uint8_t)(rtConfig->getCalculatedTotalTravel() >> 24);
+        returnLength += 4;
+      }
+      if (rxValue[0] == cc_write) {
+        returnValue[0] = cc_success;
+        ss2k->setTargetPosition(int32_t((uint8_t)(rxValue[2]) << 0 | (uint8_t)(rxValue[3]) << 8 | (uint8_t)(rxValue[4]) << 16 | (uint8_t)(rxValue[5]) << 24));
+        logBufLength += snprintf(logBuf + logBufLength, kLogBufCapacity - logBufLength, " (%f)", rtConfig->getCalculatedTotalTravel());
+      }
+      break;
   }
 
   SS2K_LOG(CUSTOM_CHAR_LOG_TAG, "%s", logBuf);
@@ -898,6 +932,18 @@ void BLE_ss2kCustomCharacteristic::parseNemit() {
   if (userConfig->getHMax() != _oldParams.getHMax()) {
     _oldParams.setHMax(userConfig->getHMax());
     BLE_ss2kCustomCharacteristic::notify(BLE_hMax);
+    return;
+  }
+
+  if (rtConfig->getTotalTravel() != _oldRTParams.getTotalTravel()) {
+    _oldRTParams.setTotalTravel(rtConfig->getTotalTravel());
+    BLE_ss2kCustomCharacteristic::notify(BLE_totalTravel);
+    return;
+  }
+
+    if (rtConfig->getCalculatedTotalTravel() != _oldRTParams.getCalculatedTotalTravel()) {
+    _oldRTParams.setCalculatedTotalTravel(rtConfig->getCalculatedTotalTravel());
+    BLE_ss2kCustomCharacteristic::notify(BLE_calculatedTotalTravel);
     return;
   }
 }
