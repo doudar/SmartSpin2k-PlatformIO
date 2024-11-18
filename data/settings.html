@@ -54,8 +54,25 @@
         </div>
 
         <div class="settings-section" role="region" aria-labelledby="simulation-header">
-          <h2 id="simulation-header">Simulation Settings</h2>
+          <h2 id="simulation-header">Main Settings</h2>
           
+          <div class="setting-group">
+            <label for="powerCorrectionFactor" class="setting-label tooltip">
+              Power Correction Factor
+              <span class="tooltiptext">Increase or decrease to correct the power transmitted from your bike.</span>
+            </label>
+            <div class="slider-group">
+              <button type="button" onclick="clickStep(document.getElementById('powerCorrectionFactor'), '-')" class="adjust-button">−</button>
+              <div class="slider-container">
+                  <output id="powerCorrectionFactorValue">1</output><span>x</span>
+                <input type="range" id="powerCorrectionFactor" name="powerCorrectionFactor" 
+                       value="1.00" min="0.4" max="2.5" step="0.01"
+                       onchange="updateSliderAndSend(this, document.getElementById('powerCorrectionFactorValue'))">
+              </div>
+              <button type="button" onclick="clickStep(document.getElementById('powerCorrectionFactor'), '+')" class="adjust-button">+</button>
+            </div>
+          </div>
+
           <div class="setting-group">
             <label for="shiftStep" class="setting-label tooltip">
               Shift Amount
@@ -135,22 +152,6 @@
               <button type="button" onclick="clickStep(document.getElementById('maxWatts'), '+')" class="adjust-button">+</button>
             </div>
           </div>
-
-          <div class="setting-group">
-            <label for="stepperPower" class="setting-label tooltip">
-              Stepper Power
-              <span class="tooltiptext">Amount in milli amps for stepper motor. Set to minimum required to move knob smoothly.</span>
-            </label>
-            <div class="slider-group">
-              <button type="button" onclick="clickStep(document.getElementById('stepperPower'), '-')" class="adjust-button">−</button>
-              <div class="slider-container">
-                <output id="stepperPowerValue">0</output><span>ma</span>
-                <input type="range" id="stepperPower" name="stepperPower" min="100" max="2000" value="0" step="100"
-                       onchange="updateSliderAndSend(this, document.getElementById('stepperPowerValue'))">
-              </div>
-              <button type="button" onclick="clickStep(document.getElementById('stepperPower'), '+')" class="adjust-button">+</button>
-            </div>
-          </div>
         </div>
 
         <div class="settings-section" role="region" aria-labelledby="system-header">
@@ -209,6 +210,21 @@
               <input type="checkbox" name="udpLogEnabled" id="udpLogEnabled" onchange="sendSetting(this)">
               <span class="slider"></span>
             </label>
+          </div>
+          <div class="setting-group">
+            <label for="stepperPower" class="setting-label tooltip">
+              Stepper Power
+              <span class="tooltiptext">Amount in milli amps for stepper motor. Set to minimum required to move knob smoothly.</span>
+            </label>
+            <div class="slider-group">
+              <button type="button" onclick="clickStep(document.getElementById('stepperPower'), '-')" class="adjust-button">−</button>
+              <div class="slider-container">
+                <output id="stepperPowerValue">0</output><span>ma</span>
+                <input type="range" id="stepperPower" name="stepperPower" min="100" max="2000" value="0" step="100"
+                       onchange="updateSliderAndSend(this, document.getElementById('stepperPowerValue'))">
+              </div>
+              <button type="button" onclick="clickStep(document.getElementById('stepperPower'), '+')" class="adjust-button">+</button>
+            </div>
           </div>
         </div>
     </div>

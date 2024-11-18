@@ -61,28 +61,6 @@
             </div>
           </div>
 
-          <div class="setting-group">
-            <h2>Power Settings</h2>
-            <div class="input-group">
-              <label for="powerCorrectionFactor" class="setting-label tooltip">
-                Power Correction Factor
-                <span class="tooltiptext">Increase or decrease to correct the power transmitted from your bike.</span>
-              </label>
-              <div class="slider-group">
-                <button type="button" onclick="clickStep(document.getElementById('powerCorrectionFactor'), '-')" class="adjust-button">−</button>
-                <div class="slider-container">
-                  <div class="value-display">
-                    <span id="powerCorrectionFactorValue">1</span><span>x</span>
-                  </div>
-                  <input type="range" id="powerCorrectionFactor" name="powerCorrectionFactor" 
-                         value="1.00" min="0.4" max="2.5" step="0.01"
-                         onchange="updateSlider(this.value, document.getElementById('powerCorrectionFactorValue'))">
-                </div>
-                <button type="button" onclick="clickStep(document.getElementById('powerCorrectionFactor'), '+')" class="adjust-button">+</button>
-              </div>
-            </div>
-          </div>
-
           <div class="button-group">
             <button type="submit" class="primary-button">Save Devices</button>
           </div>
@@ -117,17 +95,6 @@
       PMDropdown.length = 0;
       HRDropdown.length = 0;
       remoteDropdown.length = 0;
-    }
-
-    function updateSlider(value, valueElement) {
-      valueElement.innerHTML = value;
-    }
-
-    function clickStep(element, direction) {
-      const step = parseFloat(element.step);
-      const newValue = parseFloat(element.value) + (direction === '+' ? step : -step);
-      element.value = newValue;
-      updateSlider(element.value, document.getElementById(element.name + 'Value'));
     }
 
     function requestConfigValues() {
@@ -180,10 +147,6 @@
               remoteDropdown.add(option.cloneNode(true));
             }
           });
-
-          // Update power correction factor
-          document.getElementById('powerCorrectionFactorValue').textContent = data.powerCorrectionFactor;
-          document.getElementById('powerCorrectionFactor').value = data.powerCorrectionFactor;
 
           // Remove loading watermark
           document.getElementById('loadingWatermark')?.remove();
