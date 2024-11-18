@@ -247,86 +247,82 @@ a:hover{color:#2a9df4}
   display: grid;
   gap: 2rem;
   padding: 1rem 0;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .settings-section {
   background: rgba(255,255,255,.1);
   border-radius: 8px;
   padding: 1.5rem;
-  margin-bottom: 1rem;
+  margin-bottom: .5rem;
 }
 
 .setting-group {
   margin-bottom: 1.5rem;
   background: rgba(3,37,76,.6);
   border-radius: 6px;
-  padding: 1.5rem;
+  padding: 1rem;
   box-shadow: 0 2px 4px rgba(0,0,0,.1);
   border: 1px solid rgba(255,255,255,.1);
 }
 
-.setting-group:hover {
-  background: rgba(3,37,76,.8);
-  border-color: rgba(255,255,255,.2);
-}
-
-.setting-group h2 {
-  margin: 0 0 1.5rem;
-  font-size: 1.2rem;
-  color: #2a9df4;
-  border-bottom: 1px solid rgba(42,157,244,.3);
-  padding-bottom: .5rem;
-}
-
-.setting-label {
-  display: block;
-  margin-bottom: .75rem;
-  font-weight: 500;
+/* Text Input Styles */
+.setting-group input[type="text"],
+.setting-group input[type="password"] {
+  width: 100%;
+  padding: .75rem;
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 4px;
   color: #fff;
-  font-size: 1.1em;
-  text-shadow: 0 1px 2px rgba(0,0,0,.2);
+  font-size: 1rem;
+  box-sizing: border-box;
 }
 
-.setting-help {
-  font-size: .875rem;
-  color: rgba(255,255,255,.7);
-  margin-top: .25rem;
-}
-
+/* Slider Styles */
 .slider-group {
   display: flex;
   align-items: center;
-  gap: .5rem;
+  gap: 1rem;
   min-height: 60px;
-  padding: .5rem;
+  padding: 1rem;
   background: rgba(0,0,0,.2);
   border-radius: 4px;
+  justify-content: center;
 }
 
 .slider-container {
   flex: 1;
-  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: .5rem;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.slider-container input[type="range"] {
+  width: 100%;
 }
 
 .value-display {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: .5rem;
+  margin-bottom: 5.5rem;
   font-weight: 500;
   color: #2a9df4;
 }
 
 .value-display span {
-  margin-left: 2px;
+  margin-left: 20px;
 }
 
 .adjust-button {
-  width: 32px;
-  height: 32px;
+  width: 50px;
+  height: 50px;
   border: none;
   background: #03254c;
   color: #fff;
@@ -399,25 +395,6 @@ a:hover{color:#2a9df4}
   display: flex;
   flex-direction: column;
   gap: .5rem;
-  padding: 1rem;
-  background: rgba(0,0,0,.2);
-  border-radius: 4px;
-  transition: background .2s;
-}
-
-.status-item:hover {
-  background: rgba(0,0,0,.3);
-}
-
-.status-label {
-  font-size: .9rem;
-  color: rgba(255,255,255,.7);
-  text-transform: uppercase;
-  letter-spacing: .5px;
-}
-
-.status-value {
-  font-size: 1.1rem;
   font-weight: 500;
   color: #2a9df4;
 }
@@ -518,14 +495,14 @@ a:hover{color:#2a9df4}
 
 /* StreamFit Styles */
 .upload-container{text-align:center;padding:2rem;background:rgba(3,37,76,.6);border-radius:12px;margin-bottom:2rem}
-.file-upload{display:flex;flex-direction:column;align-items:center;gap:1rem;padding:2rem;border:2px dashed rgba(255,255,255,.2);border-radius:8px;cursor:pointer;transition:all .3s}
+.file-upload{display:flex;flex-direction:column;align-items:center;gap:1rem;padding:1rem;border:2px dashed rgba(255,255,255,.2);border-radius:8px;cursor:pointer;transition:all .3s}
 .file-upload:hover{border-color:#2a9df4;background:rgba(42,157,244,.1)}
 .upload-icon{font-size:2.5rem;color:#2a9df4}
 .file-input{display:none}
 
 /* Metrics Display */
-.metrics-grid{display:grid;gap:1.5rem;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin:2rem 0}
-.metric-card{background:rgba(3,37,76,.6);border-radius:8px;padding:1.5rem;text-align:center;border:1px solid rgba(255,255,255,.1)}
+.metrics-grid{display:grid;gap:1.5rem;grid-template-columns:repeat(auto-fit,minmax(100px,.5fr));margin:.5rem}
+.metric-card{background:rgba(3,37,76,.6);border-radius:8px;padding:.5rem;text-align:center;border:1px solid rgba(255,255,255,.1)}
 .metric-icon{font-size:2rem;margin-bottom:.5rem}
 .metric-label{font-size:.9rem;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.5rem}
 .metric-value{font-size:2rem;font-weight:600;color:#2a9df4;margin-bottom:.25rem}
