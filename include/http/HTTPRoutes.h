@@ -33,7 +33,8 @@ public:
     static HandlerFunction handleLogin;
     static HandlerFunction handleOTAUpdate;
     static HandlerFunction handleFileUpload;
-    static HandlerFunction handleSendSettings;  // Added this handler
+    static HandlerFunction handleSendSettings; 
+    static HandlerFunction handleReboot;
     
     // Setup function to register all routes
     static void setupRoutes(WebServer& server);
@@ -67,5 +68,6 @@ private:
     static void _handleLogin();
     static void _handleOTAUpdate();
     static void _handleFileUpload();
-    static void _handleSendSettings();  // Added this handler implementation
+    static void _handleSendSettings(); 
+    static void _handleReboot();
 };

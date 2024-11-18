@@ -34,6 +34,7 @@ HTTPRoutes::HandlerFunction HTTPRoutes::handleLogin             = nullptr;
 HTTPRoutes::HandlerFunction HTTPRoutes::handleOTAUpdate         = nullptr;
 HTTPRoutes::HandlerFunction HTTPRoutes::handleFileUpload        = nullptr;
 HTTPRoutes::HandlerFunction HTTPRoutes::handleSendSettings      = nullptr;
+HTTPRoutes::HandlerFunction HTTPRoutes::handleReboot            = nullptr;
 
 void HTTPRoutes::initialize(WebServer& server) {
   currentServer = &server;
@@ -55,6 +56,7 @@ void HTTPRoutes::initialize(WebServer& server) {
   handleOTAUpdate         = []() { _handleOTAUpdate(); };
   handleFileUpload        = []() { _handleFileUpload(); };
   handleSendSettings      = []() { _handleSendSettings(); };
+  handleReboot            = []() { _handleReboot(); };
 }
 
 void HTTPRoutes::_handleIndexFile() {
@@ -220,9 +222,7 @@ void HTTPRoutes::_handleOTAUpdate() {
   currentServer->send(200, "text/html", OTAServerIndex);
 }
 
-void HTTPRoutes::_handleFileUpload() {
-  HTTPFirmware::handleOTAUpdate(*currentServer);
-}
+void HTTPRoutes::_handleFileUpload() { HTTPFirmware::handleOTAUpdate(*currentServer); }
 
 void HTTPRoutes::setupRoutes(WebServer& server) {
   initialize(server);
@@ -266,6 +266,7 @@ void HTTPRoutes::setupControlRoutes(WebServer& server) {
   server.on("/PWCJSON", HTTP_GET, handlePWCJSON);
   server.on("/BLEScan", HTTP_GET, handleBTScanner);
   server.on("/send_settings", HTTP_GET, handleSendSettings);
+  server.on("/reboot.html", HTTP_GET, handleReboot);
 }
 
 void HTTPRoutes::setupUpdateRoutes(WebServer& server) {
@@ -282,3 +283,13 @@ void HTTPRoutes::setupUpdateRoutes(WebServer& server) {
 }
 
 void HTTPRoutes::_handleSendSettings() { HTTPSettings::processSettings(*currentServer); }
+
+void HTTPRoutes::_handleReboot() {
+  ss2k->rebootFlag = true;
+  String response =
+      "Please wait while your SmartSpin2k reboots.</h2></body><script> "
+      "setTimeout(\"location.href = 'http://" +
+      WiFi.localIP().toString() + "/index.html';\",5000);</script></html>";
+  currentServer->send(200, "text/html", response);
+  ss2k->rebootFlag = true;
+}
