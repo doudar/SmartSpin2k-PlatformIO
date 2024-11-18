@@ -382,15 +382,12 @@
   function sendSetting(element) {
     var params = new URLSearchParams();
     
-    // Add the changed setting
     var value = element.type === 'checkbox' ? element.checked : element.value;
     if((element.type == 'checkbox') && element.checked){
     params.append(element.name, value);}
     
-    // Always include shiftStep
     params.append('shiftStep', document.getElementById('shiftStep').value);
     
-    // Always include all checkbox values that are true
     const checkboxes = ['stealthChop', 'autoUpdate', 'stepperDir', 'shifterDir', 'udpLogEnabled'];
     checkboxes.forEach(id => {
       if (document.getElementById(id).checked) {
