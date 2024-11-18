@@ -74,9 +74,14 @@ void HTTPRoutes::_handleIndexFile() {
 
 void HTTPRoutes::_handleBTScanner() {
   SS2K_LOG(HTTP_SERVER_LOG_TAG, "Scanning from web request");
+  String response =
+      "<!DOCTYPE html><html><body>Scanning for BLE Devices. Please wait "
+      "15 seconds.</body><script> setTimeout(\"location.href = 'http://" +
+      WiFi.localIP().toString() + "/bluetoothscanner.html';\",15000);</script></html>";
+  // spinBLEClient.resetDevices();
   spinBLEClient.dontBlockScan = true;
   spinBLEClient.doScan        = true;
-  _handleLittleFSFile();
+  currentServer->send(200, "text/html", response);
 }
 
 void HTTPRoutes::_handleLittleFSFile() {
