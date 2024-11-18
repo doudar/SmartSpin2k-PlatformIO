@@ -21,11 +21,11 @@ private:
     // Network settings
     static void processNetworkSettings(WebServer& server);
     static void processDeviceSettings(WebServer& server);
-    static void processStepperSettings(WebServer& server);
+    static bool processStepperSettings(WebServer& server);
     static void processPowerSettings(WebServer& server);
     static void processERGSettings(WebServer& server);
     static void processFeatureSettings(WebServer& server);
-    static bool processBluetoothSettings(WebServer& server);  // Changed return type to bool
+    static bool processBluetoothSettings(WebServer& server);
     static void processPWCSettings(WebServer& server);
     
     // Helper functions

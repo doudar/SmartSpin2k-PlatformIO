@@ -21,7 +21,7 @@
     <h1><strong>Settings</strong></h1>
     <h2>
       <p></p>
-      <form action="/send_settings">
+      <div id="settings-form">
         <table class="center" height="182" cellspacing="1">
           <tbody>
             <tr>
@@ -36,7 +36,7 @@
                 </p>
               </td>
               <td>
-                <input type="text" id="ssid" name="ssid" value="loading" />
+                <input type="text" id="ssid" name="ssid" value="loading" onchange="sendSetting(this)" />
               </td>
             </tr>
             <tr>
@@ -48,7 +48,7 @@
                   </span>
                 </p>
               </td>
-              <td><input type="password" id="password" name="password" value="loading" />
+              <td><input type="password" id="password" name="password" value="loading" onchange="sendSetting(this)" />
                 <input type="checkbox" id="showpassword" name="showpassword" onclick="toggleShowPassword()">
                 <p class="tooltip">
                   Show
@@ -67,7 +67,7 @@
                   </span>
                 </p>
               </td>
-              <td><input type="text" id="deviceName" name="deviceName" value="loading" />
+              <td><input type="text" id="deviceName" name="deviceName" value="loading" onchange="sendSetting(this)" />
               </td>
             </tr>
             <tr>
@@ -86,7 +86,7 @@
                 <input type='button' onclick="clickStep(document.getElementById('shiftStep'), this.value)" value="-">
                 <input style="width:50%; position: relative; top: 5px;" type="range" id="shiftStep" name="shiftStep"
                   min="10" max="6000" value="0" step="50" class="slider1"
-                  onchange="updateSlider(this.value, document.getElementById('shiftStepValue'))" />
+                  onchange="updateSliderAndSend(this, document.getElementById('shiftStepValue'))" />
                 <input type='button' onclick="clickStep(document.getElementById('shiftStep'), this.value)" value="+">
               </td>
             </tr>
@@ -109,10 +109,9 @@
                   value="-">
                 <input style="width:50%; position: relative; top: 5px;" type="range" id="inclineMultiplier"
                   name="inclineMultiplier" value="0" min="1" max="10" step="1" class="slider1"
-                  onchange="updateSlider(this.value, document.getElementById('inclineMultiplierValue'))" />
+                  onchange="updateSliderAndSend(this, document.getElementById('inclineMultiplierValue'))" />
                 <input type='button' onclick="clickStep(document.getElementById('inclineMultiplier'), this.value)"
                   value="+">
-
               </td>
             </tr>
             <tr>
@@ -132,7 +131,7 @@
                   value="-">
                 <input style="width:50%; position: relative; top: 5px;" type="range" id="ERGSensitivity"
                   name="ERGSensitivity" value="1.0" min=".1" max="20" step=".1" class="slider1"
-                  onchange="updateSlider(this.value, document.getElementById('ERGSensitivityValue'))" />
+                  onchange="updateSliderAndSend(this, document.getElementById('ERGSensitivityValue'))" />
                 <input type='button' onclick="clickStep(document.getElementById('ERGSensitivity'), this.value)"
                   value="+">
               </td>
@@ -152,7 +151,7 @@
                 <input type='button' onclick="clickStep(document.getElementById('minWatts'), this.value)" value="-">
                 <input style="width:50%; position: relative; top: 5px;" type="range" id="minWatts" name="minWatts"
                   min="0" max="200" value="0" step="5" class="slider1"
-                  onchange="updateSlider(this.value, document.getElementById('minWattsValue'))" />
+                  onchange="updateSliderAndSend(this, document.getElementById('minWattsValue'))" />
                 <input type='button' onclick="clickStep(document.getElementById('minWatts'), this.value)" value="+">
               </td>
             </tr>
@@ -171,7 +170,7 @@
                 <input type='button' onclick="clickStep(document.getElementById('maxWatts'), this.value)" value="-">
                 <input style="width:50%; position: relative; top: 5px;" type="range" id="maxWatts" name="maxWatts"
                   min="0" max="2000" value="0" step="25" class="slider1"
-                  onchange="updateSlider(this.value, document.getElementById('maxWattsValue'))" />
+                  onchange="updateSliderAndSend(this, document.getElementById('maxWattsValue'))" />
                 <input type='button' onclick="clickStep(document.getElementById('maxWatts'), this.value)" value="+">
               </td>
             </tr>
@@ -192,7 +191,7 @@
                 <input type='button' onclick="clickStep(document.getElementById('stepperPower'), this.value)" value="-">
                 <input style="width:50%; position: relative; top: 5px;" type="range" id="stepperPower"
                   name="stepperPower" min="100" max="2000" value="0" step="100" class="slider1"
-                  onchange="updateSlider(this.value, document.getElementById('stepperPowerValue'))" />
+                  onchange="updateSliderAndSend(this, document.getElementById('stepperPowerValue'))" />
                 <input type='button' onclick="clickStep(document.getElementById('stepperPower'), this.value)" value="+">
               </td>
             </tr>
@@ -205,7 +204,7 @@
                 </p>
               </td>
               <td>
-                <label class="switch"><input type="checkbox" name="stealthChop" id="stealthChop"><span
+                <label class="switch"><input type="checkbox" name="stealthChop" id="stealthChop" onchange="sendSetting(this)"><span
                     class="slider"></span></label>
               </td>
             </tr>
@@ -218,7 +217,7 @@
                 </p>
               </td>
               <td>
-                <label class="switch"><input type="checkbox" name="autoUpdate" id="autoUpdate"><span
+                <label class="switch"><input type="checkbox" name="autoUpdate" id="autoUpdate" onchange="sendSetting(this)"><span
                     class="slider"></span></label>
               </td>
             </tr>
@@ -231,7 +230,7 @@
                 </p>
               </td>
               <td>
-                <label class="switch"><input type="checkbox" name="stepperDir" id="stepperDir"><span
+                <label class="switch"><input type="checkbox" name="stepperDir" id="stepperDir" onchange="sendSetting(this)"><span
                     class="slider"></span></label>
               </td>
             </tr>
@@ -240,7 +239,7 @@
                 <p class="tooltip">Shifter Direction<span class="tooltiptext">Change Shifter Direction</span></p>
               </td>
               <td>
-                <label class="switch"><input type="checkbox" name="shifterDir" id="shifterDir"><span
+                <label class="switch"><input type="checkbox" name="shifterDir" id="shifterDir" onchange="sendSetting(this)"><span
                     class="slider"></span></label>
               </td>
             </tr>
@@ -250,14 +249,13 @@
                     10.000</span></p>
               </td>
               <td>
-                <label class="switch"><input type="checkbox" name="udpLogEnabled" id="udpLogEnabled"><span
+                <label class="switch"><input type="checkbox" name="udpLogEnabled" id="udpLogEnabled" onchange="sendSetting(this)"><span
                     class="slider"></span></label>
               </td>
             </tr>
           </tbody>
         </table>
-        <input type="submit" value="Save Settings" />
-      </form>
+      </div>
       <p></p>
       <form action="/reboot.html">
         <input type="submit" value="Reboot!">
@@ -358,13 +356,18 @@
     valueElement.innerHTML = x;
   }
 
+  function updateSliderAndSend(element, valueElement) {
+    updateSlider(element.value, valueElement);
+    sendSetting(element);
+  }
+
   function clickStep(element, incOrDec) {
     if (incOrDec == "+") {
       element.value = parseFloat(element.value) + parseFloat(element.step);
     } else {
       element.value = parseFloat(element.value) - parseFloat(element.step);
     }
-    updateSlider(element.value, document.getElementById(element.name + 'Value'));
+    updateSliderAndSend(element, document.getElementById(element.name + 'Value'));
   }
 
   function toggleShowPassword() {
@@ -374,6 +377,32 @@
     } else {
       x.type = "password";
     }
+  }
+
+  function sendSetting(element) {
+    var params = new URLSearchParams();
+    
+    // Add the changed setting
+    var value = element.type === 'checkbox' ? element.checked : element.value;
+    if((element.type == 'checkbox') && element.checked){
+    params.append(element.name, value);}
+    
+    // Always include shiftStep
+    params.append('shiftStep', document.getElementById('shiftStep').value);
+    
+    // Always include all checkbox values that are true
+    const checkboxes = ['stealthChop', 'autoUpdate', 'stepperDir', 'shifterDir', 'udpLogEnabled'];
+    checkboxes.forEach(id => {
+      if (document.getElementById(id).checked) {
+        params.append(id, 'true');
+      }
+    });
+    
+    fetch('/send_settings?' + params.toString(), {
+      method: 'GET'
+    }).catch(function(error) {
+      console.error('Error:', error);
+    });
   }
 </script>
 
