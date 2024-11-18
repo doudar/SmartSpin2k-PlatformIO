@@ -35,6 +35,7 @@ HTTPRoutes::HandlerFunction HTTPRoutes::handleOTAUpdate         = nullptr;
 HTTPRoutes::HandlerFunction HTTPRoutes::handleFileUpload        = nullptr;
 HTTPRoutes::HandlerFunction HTTPRoutes::handleSendSettings      = nullptr;
 HTTPRoutes::HandlerFunction HTTPRoutes::handleReboot            = nullptr;
+HTTPRoutes::HandlerFunction HTTPRoutes::handleBLEScan           = nullptr;
 
 void HTTPRoutes::initialize(WebServer& server) {
   currentServer = &server;
@@ -57,6 +58,7 @@ void HTTPRoutes::initialize(WebServer& server) {
   handleFileUpload        = []() { _handleFileUpload(); };
   handleSendSettings      = []() { _handleSendSettings(); };
   handleReboot            = []() { _handleReboot(); };
+  handleBLEScan           = []() { _handleBLEScan(); };
 }
 
 void HTTPRoutes::_handleIndexFile() {
@@ -74,14 +76,9 @@ void HTTPRoutes::_handleIndexFile() {
 
 void HTTPRoutes::_handleBTScanner() {
   SS2K_LOG(HTTP_SERVER_LOG_TAG, "Scanning from web request");
-  String response =
-      "<!DOCTYPE html><html><body>Scanning for BLE Devices. Please wait "
-      "15 seconds.</body><script> setTimeout(\"location.href = 'http://" +
-      WiFi.localIP().toString() + "/bluetoothscanner.html';\",15000);</script></html>";
-  // spinBLEClient.resetDevices();
   spinBLEClient.dontBlockScan = true;
   spinBLEClient.doScan        = true;
-  currentServer->send(200, "text/html", response);
+  _handleLittleFSFile();
 }
 
 void HTTPRoutes::_handleLittleFSFile() {
@@ -269,9 +266,9 @@ void HTTPRoutes::setupControlRoutes(WebServer& server) {
   server.on("/configJSON", HTTP_GET, handleConfigJSON);
   server.on("/runtimeConfigJSON", HTTP_GET, handleRuntimeConfigJSON);
   server.on("/PWCJSON", HTTP_GET, handlePWCJSON);
-  server.on("/BLEScan", HTTP_GET, handleBTScanner);
   server.on("/send_settings", HTTP_GET, handleSendSettings);
   server.on("/reboot.html", HTTP_GET, handleReboot);
+  server.on("/BLEScan", HTTP_GET, handleBLEScan);
 }
 
 void HTTPRoutes::setupUpdateRoutes(WebServer& server) {
@@ -297,4 +294,15 @@ void HTTPRoutes::_handleReboot() {
       WiFi.localIP().toString() + "/index.html';\",5000);</script></html>";
   currentServer->send(200, "text/html", response);
   ss2k->rebootFlag = true;
+}
+
+void HTTPRoutes::_handleBLEScan() {
+  SS2K_LOG(HTTP_SERVER_LOG_TAG, "Scanning from web request");
+  String response =
+      "<!DOCTYPE html><html><body>Scanning for BLE Devices. Please wait "
+      "10 seconds.</body><script> setTimeout(\"location.href = 'http://" +
+      WiFi.localIP().toString() + "/bluetoothscanner.html';\",10000);</script></html>";
+  spinBLEClient.dontBlockScan = true;
+  spinBLEClient.doScan        = true;
+  currentServer->send(200, "text/html", response);
 }

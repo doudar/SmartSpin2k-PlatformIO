@@ -35,6 +35,7 @@ public:
     static HandlerFunction handleFileUpload;
     static HandlerFunction handleSendSettings; 
     static HandlerFunction handleReboot;
+    static HandlerFunction handleBLEScan;
     
     // Setup function to register all routes
     static void setupRoutes(WebServer& server);
@@ -70,4 +71,5 @@ private:
     static void _handleFileUpload();
     static void _handleSendSettings(); 
     static void _handleReboot();
+    static void _handleBLEScan();
 };
