@@ -7,10 +7,12 @@
 
 #pragma once
 
-#include "HTTP_Server_Basic.h"
+#include "http/HTTPCore.h"
+#include "http/HTTPRoutes.h"
+#include "http/HTTPSettings.h"
+#include "http/HTTPFirmware.h"
 #include "SmartSpin_parameters.h"
 #include "BLE_Common.h"
-// #include "LittleFS_Upgrade.h"
 #include "boards.h"
 #include "SensorCollector.h"
 #include "SS2KLog.h"

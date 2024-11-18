@@ -27,7 +27,6 @@ private:
     static void syncClock();
 
     static const byte DNS_PORT = 53;
-    static const int WIFI_CONNECT_TIMEOUT = 20; // seconds
     
     static DNSServer dnsServer;
     static IPAddress myIP;

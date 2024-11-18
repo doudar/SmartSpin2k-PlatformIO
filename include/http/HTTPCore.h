@@ -18,7 +18,6 @@
 #include "wifi/WiFiManager.h"
 
 #define HTTP_SERVER_LOG_TAG "HTTP_Server"
-#define WEBSERVER_DELAY 10 // ms
 
 class HTTPCore {
 public:

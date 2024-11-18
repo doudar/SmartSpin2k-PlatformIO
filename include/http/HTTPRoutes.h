@@ -10,8 +10,8 @@
 #include <Arduino.h>
 #include <WebServer.h>
 #include <functional>
+#include <FS.h>
 #include <LittleFS.h>
-#include "Builtin_Pages.h"
 
 class HTTPRoutes {
 public:
@@ -33,6 +33,7 @@ public:
     static HandlerFunction handleLogin;
     static HandlerFunction handleOTAUpdate;
     static HandlerFunction handleFileUpload;
+    static HandlerFunction handleSendSettings;  // Added this handler
     
     // Setup function to register all routes
     static void setupRoutes(WebServer& server);
@@ -66,4 +67,5 @@ private:
     static void _handleLogin();
     static void _handleOTAUpdate();
     static void _handleFileUpload();
+    static void _handleSendSettings();  // Added this handler implementation
 };

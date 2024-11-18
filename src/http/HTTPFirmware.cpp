@@ -186,14 +186,9 @@ void HTTPFirmware::handleOTAUpdate(WebServer& server) {
     HTTPUpload& upload = server.upload();
     
     if (upload.status == UPLOAD_FILE_START) {
-        if (upload.filename == String("firmware.bin")) {
-            if (!Update.begin(UPDATE_SIZE_UNKNOWN, U_FLASH)) {
-                Update.printError(Serial);
-            }
-        } else if (upload.filename == String("littlefs.bin")) {
-            if (!Update.begin(UPDATE_SIZE_UNKNOWN, U_SPIFFS)) {
-                Update.printError(Serial);
-            }
+        SS2K_LOG(HTTP_SERVER_LOG_TAG, "Update: %s", upload.filename.c_str());
+        if (!Update.begin(UPDATE_SIZE_UNKNOWN)) {
+            Update.printError(Serial);
         }
     } else if (upload.status == UPLOAD_FILE_WRITE) {
         if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
@@ -201,18 +196,16 @@ void HTTPFirmware::handleOTAUpdate(WebServer& server) {
         }
     } else if (upload.status == UPLOAD_FILE_END) {
         if (Update.end(true)) {
-            if (upload.filename == String("firmware.bin")) {
-                server.send(200, "text/plain", "Firmware Uploaded Successfully. Rebooting...");
-                ESP.restart();
-            } else if (upload.filename == String("littlefs.bin")) {
-                server.send(200, "text/plain", "Littlefs Uploaded Successfully. Rebooting...");
-                userConfig->saveToLittleFS();
-                userPWC->saveToLittleFS();
-                ss2k->rebootFlag = true;
-            }
+            SS2K_LOG(HTTP_SERVER_LOG_TAG, "Update Success: %u bytes\nRebooting...", upload.totalSize);
+            server.send(200, "text/plain", "Update successful. Rebooting...");
+            delay(1000);
+            ESP.restart();
         } else {
             Update.printError(Serial);
         }
+    } else if (upload.status == UPLOAD_FILE_ABORTED) {
+        Update.end();
+        SS2K_LOG(HTTP_SERVER_LOG_TAG, "Update aborted");
     }
 }
 

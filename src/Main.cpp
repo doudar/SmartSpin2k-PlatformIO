@@ -121,8 +121,8 @@ void setup() {
   // Check for firmware update. It's important that this stays before BLE &
   // HTTP setup because otherwise they use too much traffic and the device
   // fails to update which really sucks when it corrupts your settings.
-  startWifi();
-  httpServer.FirmwareUpdate();
+WiFiManager::startWifi();
+HTTPFirmware::checkForUpdates();
 
   pinMode(currentBoard.shiftUpPin, INPUT_PULLUP);    // Push-Button with input Pullup
   pinMode(currentBoard.shiftDownPin, INPUT_PULLUP);  // Push-Button with input Pullup
@@ -192,7 +192,7 @@ void SS2K::maintenanceLoop(void *pvParameters) {
     // Run what used to be in the ERG Mode Task.
     powerTable->runERG();
     // Run what used to be in the WebClient Task.
-    httpServer.webClientUpdate();
+    httpServer.update();
     // If we're in ERG mode, modify shift commands to inc/dec the target watts instead.
     ss2k->FTMSModeShiftModifier();
     // If we have a resistance bike attached, slow down when we're close to the limits.
@@ -387,12 +387,12 @@ void SS2K::FTMSModeShiftModifier() {
 }
 
 void SS2K::restartWifi() {
-  httpServer.stop();
-  vTaskDelay(100 / portTICK_RATE_MS);
-  stopWifi();
-  vTaskDelay(100 / portTICK_RATE_MS);
-  startWifi();
-  httpServer.start();
+    httpServer.stop();
+    vTaskDelay(100 / portTICK_RATE_MS);
+    WiFiManager::stopWifi();
+    vTaskDelay(100 / portTICK_RATE_MS);
+    WiFiManager::startWifi();
+    httpServer.start();
 }
 
 void SS2K::moveStepper() {
