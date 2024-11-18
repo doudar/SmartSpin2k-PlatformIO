@@ -58,8 +58,20 @@ const char* const DEFAULT_PASSWORD = "password";
 // Stepper peak current in ma. This is hardware restricted to a maximum of 2000ma on the TMC2225. RMS current is less.
 #define DEFAULT_STEPPER_POWER 900
 
+// Minimum stepper power setting
+#define MIN_STEPPER_POWER 100
+
+// Maximum stepper power setting
+#define MAX_STEPPER_POWER 2000
+
 // Default Shift Step. The amount to move the stepper motor for a shift press.
 #define DEFAULT_SHIFT_STEP 1200
+
+// Minimum shift step setting
+#define MIN_SHIFT_STEP 10
+
+// Maximum shift step setting
+#define MAX_SHIFT_STEP 6000
 
 // Stepper Acceleration in steps/s^2
 #define STEPPER_ACCELERATION 3000

@@ -8,40 +8,13 @@
 #pragma once
 
 #include <Arduino.h>
+#include "http/HTTPCore.h"
+#include "http/HTTPRoutes.h"
+#include "http/HTTPFileSystem.h"
+#include "http/HTTPSettings.h"
+#include "http/HTTPFirmware.h"
 
-#define HTTP_SERVER_LOG_TAG "HTTP_Server"
-
-class HTTP_Server {
- private:
- public:
-  bool internetConnection;
-
-  void start();
-  void stop();
-  static void handleBTScanner();
-  static void handleLittleFSFile();
-  static void handleIndexFile();
-  static void settingsProcessor();
-  static void handleHrSlider();
-  static void FirmwareUpdate();
-  
-  static void webClientUpdate();
-
-  HTTP_Server() { internetConnection = false; }
-};
-
-#ifdef USE_TELEGRAM
-#define SEND_TO_TELEGRAM(message) sendTelegram(message);
-
-void sendTelegram(String textToSend);
-void telegramUpdate(void *pvParameters);
-#else
-#define SEND_TO_TELEGRAM(message) (void)message
-#endif
-
-// wifi Function
-void startWifi();
-void stopWifi();
-
+// For backward compatibility, use HTTPCore as HTTP_Server
+using HTTP_Server = HTTPCore;
 
 extern HTTP_Server httpServer;
