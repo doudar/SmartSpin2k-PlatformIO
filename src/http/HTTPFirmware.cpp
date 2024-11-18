@@ -199,7 +199,7 @@ void HTTPFirmware::handleOTAUpdate(WebServer& server) {
             SS2K_LOG(HTTP_SERVER_LOG_TAG, "Update Success: %u bytes\nRebooting...", upload.totalSize);
             server.send(200, "text/plain", "Update successful. Rebooting...");
             delay(1000);
-            ESP.restart();
+            ss2k->rebootFlag = true;
         } else {
             Update.printError(Serial);
         }
