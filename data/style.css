@@ -5,7 +5,7 @@ body{margin:0;min-height:100vh;background:#1167b1}
 
 /* Header and Navigation */
 header{display:flex;justify-content:space-between;align-items:center;padding:1rem 0}
-.brand{font-size:2.5rem;font-weight:700;color:#fff;text-shadow:0 2px 4px rgba(0,0,0,.3);margin:1rem 0;text-align:center;width:100%;letter-spacing:1px}
+.brand{font-size:2.5rem;font-weight:700;color:#fff;text-shadow:0 4px 8px rgba(0,0,0,.5);margin:1rem 0;text-align:center;width:100%;letter-spacing:1px}
 nav{display:flex;justify-content:space-between;align-items:center;width:100%;padding:1rem 0}
 nav a{color:#fff;text-decoration:none;padding:.5rem}
 nav a:hover{text-decoration:underline}
@@ -28,7 +28,7 @@ nav a:hover{text-decoration:underline}
   color: #fff;
   transition: all .3s ease;
   border: 1px solid rgba(255,255,255,.1);
-  box-shadow: 0 4px 6px rgba(0,0,0,.1);
+  box-shadow: 0 8px 16px rgba(0,0,0,.2);
   display: block;
 }
 
@@ -36,7 +36,7 @@ nav a:hover{text-decoration:underline}
   background: rgba(42,157,244,.15);
   border-color: rgba(42,157,244,.5);
   transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(0,0,0,.15);
+  box-shadow: 0 12px 24px rgba(0,0,0,.25);
 }
 
 .menu-content {
@@ -510,8 +510,8 @@ a:hover{color:#2a9df4}
 
 /* Developer Tools */
 .dev-tools-grid{display:grid;gap:1.5rem;padding:2rem 0;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
-.dev-tool-card{background:rgba(3,37,76,.6);border-radius:12px;padding:1.5rem;text-decoration:none;color:#fff;transition:all .3s ease;border:1px solid rgba(255,255,255,.1);box-shadow:0 4px 6px rgba(0,0,0,.1);display:grid;grid-template-columns:auto 1fr auto;gap:1.5rem;align-items:start}
-.dev-tool-card:hover{background:rgba(42,157,244,.15);border-color:rgba(42,157,244,.5);transform:translateY(-2px);box-shadow:0 6px 12px rgba(0,0,0,.15)}
+.dev-tool-card{background:rgba(3,37,76,.6);border-radius:12px;padding:1.5rem;text-decoration:none;color:#fff;transition:all .3s ease;border:1px solid rgba(255,255,255,.1);box-shadow:0 8px 16px rgba(0,0,0,.2);display:grid;grid-template-columns:auto 1fr auto;gap:1.5rem;align-items:start}
+.dev-tool-card:hover{background:rgba(42,157,244,.15);border-color:rgba(42,157,244,.5);transform:translateY(-2px);box-shadow:0 12px 24px rgba(0,0,0,.25)}
 .tool-icon{font-size:2rem;background:rgba(42,157,244,.1);width:3rem;height:3rem;display:flex;align-items:center;justify-content:center;border-radius:12px}
 .tool-content{flex:1}
 .tool-features{list-style:none;padding:0;margin:0;font-size:.9rem;color:rgba(255,255,255,.7)}
