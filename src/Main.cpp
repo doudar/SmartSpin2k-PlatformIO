@@ -18,7 +18,7 @@
 #include "BLE_Custom_Characteristic.h"
 #include <Constants.h>
 #include "settings.h"
-#include "BLE_Wattbike_Service.h"
+//#include "BLE_Wattbike_Service.h"
 #include "BLE_Fitness_Machine_Service.h"
 
 // Stepper Motor Serial
@@ -186,7 +186,7 @@ void SS2K::maintenanceLoop(void *pvParameters) {
     // send BLE notification for any userConfig values that changed.
     BLE_ss2kCustomCharacteristic::parseNemit();
     // Update Zwift Gear UI if shift happened
-    wattbikeService.parseNemit();
+    //wattbikeService.parseNemit();
     // Run What used to be in the Stepper Task.
     ss2k->moveStepper();
     // Run what used to be in the ERG Mode Task.

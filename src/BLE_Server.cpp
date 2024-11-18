@@ -15,6 +15,7 @@
 #include "BLE_Custom_Characteristic.h"
 #include "BLE_Device_Information_Service.h"
 #include "BLE_Wattbike_Service.h"
+#include "BLE_Wahoo_Gear_Service.h"
 
 #include <ArduinoJson.h>
 #include <Constants.h>
@@ -33,7 +34,8 @@ BLE_Heart_Service heartService;
 BLE_Fitness_Machine_Service fitnessMachineService;
 BLE_ss2kCustomCharacteristic ss2kCustomCharacteristic;
 BLE_Device_Information_Service deviceInformationService;
-BLE_Wattbike_Service wattbikeService;
+//BLE_Wattbike_Service wattbikeService;
+BLE_Wahoo_Gear_Service wahooGearService;
 
 void startBLEServer() {
   // Server Setup
@@ -48,7 +50,8 @@ void startBLEServer() {
   fitnessMachineService.setupService(spinBLEServer.pServer, &chrCallbacks);
   ss2kCustomCharacteristic.setupService(spinBLEServer.pServer);
   deviceInformationService.setupService(spinBLEServer.pServer);
-  wattbikeService.setupService(spinBLEServer.pServer);  // No callback needed
+ // wattbikeService.setupService(spinBLEServer.pServer);  // No callback needed
+  wahooGearService.setupService(spinBLEServer.pServer);  // No callback needed
 
   BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
   // const std::string fitnessData = {0b00000001, 0b00100000, 0b00000000};
@@ -59,7 +62,8 @@ void startBLEServer() {
   pAdvertising->addServiceUUID(CSCSERVICE_UUID);
   pAdvertising->addServiceUUID(HEARTSERVICE_UUID);
   pAdvertising->addServiceUUID(SMARTSPIN2K_SERVICE_UUID);
-  pAdvertising->addServiceUUID(WATTBIKE_SERVICE_UUID);
+  //pAdvertising->addServiceUUID(WATTBIKE_SERVICE_UUID);
+  pAdvertising->addServiceUUID(WAHOO_GEAR_SERVICE_UUID);
   pAdvertising->setMaxInterval(250);
   pAdvertising->setMinInterval(160);
   pAdvertising->setScanResponse(true);
@@ -78,14 +82,15 @@ void SpinBLEServer::update() {
   cyclingPowerService.update();
   cyclingSpeedCadenceService.update();
   fitnessMachineService.update();
-  wattbikeService.parseNemit();  // Changed from update() to parseNemit()
+  //wattbikeService.parseNemit();  // Changed from update() to parseNemit()
+  wahooGearService.update();     // Update gear indicator service
 }
 
 double SpinBLEServer::calculateSpeed() {
   // Constants for the formula: adjusted for calibration
   const double dragCoefficient   = 1.95;
   const double frontalArea       = 0.9;    // m^2
-  const double airDensity        = 1.225;  // kg/m^3
+  const double airDensity       = 1.225;  // kg/m^3
   const double rollingResistance = 0.004;
   const double combinedConstant  = 0.5 * airDensity * dragCoefficient * frontalArea + rollingResistance;
   double power                   = rtConfig->watts.getValue();           // Power in watts
