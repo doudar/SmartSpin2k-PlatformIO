@@ -7,15 +7,14 @@
 
 #pragma once
 
-// #define CONFIG_SW_COEXIST_ENABLE 1
-
-#include <memory>
 #include <NimBLEDevice.h>
+#include <memory>
 #include <Arduino.h>
 #include <queue>
 #include <deque>
 #include "Main.h"
 #include "BLE_Definitions.h"
+#include "BLE_Wattbike_Service.h"
 
 #define BLE_CLIENT_LOG_TAG  "BLE_Client"
 #define BLE_COMMON_LOG_TAG  "BLE_Common"
@@ -44,12 +43,6 @@ class MyServerCallbacks : public NimBLEServerCallbacks {
   bool onConnParamsUpdateRequest(NimBLEClient *pClient, const ble_gap_upd_params *params);
 };
 
-class MyCallbacks : public NimBLECharacteristicCallbacks {
- public:
-  void onWrite(BLECharacteristic *);
-  void onSubscribe(NimBLECharacteristic *pCharacteristic, ble_gap_conn_desc *desc, uint16_t subValue);
-};
-
 // TODO add the rest of the server to this class
 class SpinBLEServer {
  private:
@@ -62,6 +55,7 @@ class SpinBLEServer {
     bool IndoorBikeData : 1;
     bool CyclingSpeedCadence : 1;
   } clientSubscribed;
+  int spinDownFlag     = 0;
   NimBLEServer *pServer = nullptr;
   void setClientSubscribed(NimBLEUUID pUUID, bool subscribe);
   void notifyShift();
@@ -72,7 +66,14 @@ class SpinBLEServer {
   SpinBLEServer() { memset(&clientSubscribed, 0, sizeof(clientSubscribed)); }
 };
 
+class MyCallbacks : public NimBLECharacteristicCallbacks {
+ public:
+  void onWrite(BLECharacteristic *);
+  void onSubscribe(NimBLECharacteristic *pCharacteristic, ble_gap_conn_desc *desc, uint16_t subValue);
+};
+
 extern SpinBLEServer spinBLEServer;
+extern BLE_Wattbike_Service wattbikeService;
 
 void startBLEServer();
 void logCharacteristic(char *buffer, const size_t bufferCapacity, const byte *data, const size_t dataLength, const NimBLEUUID serviceUUID, const NimBLEUUID charUUID,

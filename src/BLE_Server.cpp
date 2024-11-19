@@ -14,6 +14,7 @@
 #include "BLE_Fitness_Machine_Service.h"
 #include "BLE_Custom_Characteristic.h"
 #include "BLE_Device_Information_Service.h"
+#include "BLE_Wattbike_Service.h"
 
 #include <ArduinoJson.h>
 #include <Constants.h>
@@ -32,6 +33,7 @@ BLE_Heart_Service heartService;
 BLE_Fitness_Machine_Service fitnessMachineService;
 BLE_ss2kCustomCharacteristic ss2kCustomCharacteristic;
 BLE_Device_Information_Service deviceInformationService;
+BLE_Wattbike_Service wattbikeService;
 
 void startBLEServer() {
   // Server Setup
@@ -46,7 +48,8 @@ void startBLEServer() {
   fitnessMachineService.setupService(spinBLEServer.pServer, &chrCallbacks);
   ss2kCustomCharacteristic.setupService(spinBLEServer.pServer);
   deviceInformationService.setupService(spinBLEServer.pServer);
-  
+  wattbikeService.setupService(spinBLEServer.pServer);  // No callback needed
+
   BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
   // const std::string fitnessData = {0b00000001, 0b00100000, 0b00000000};
   // pAdvertising->setServiceData(FITNESSMACHINESERVICE_UUID, fitnessData);
@@ -56,6 +59,7 @@ void startBLEServer() {
   pAdvertising->addServiceUUID(CSCSERVICE_UUID);
   pAdvertising->addServiceUUID(HEARTSERVICE_UUID);
   pAdvertising->addServiceUUID(SMARTSPIN2K_SERVICE_UUID);
+  pAdvertising->addServiceUUID(WATTBIKE_SERVICE_UUID);
   pAdvertising->setMaxInterval(250);
   pAdvertising->setMinInterval(160);
   pAdvertising->setScanResponse(true);
@@ -74,6 +78,7 @@ void SpinBLEServer::update() {
   cyclingPowerService.update();
   cyclingSpeedCadenceService.update();
   fitnessMachineService.update();
+  wattbikeService.parseNemit();  // Changed from update() to parseNemit()
 }
 
 double SpinBLEServer::calculateSpeed() {
@@ -182,7 +187,7 @@ void MyCallbacks::onSubscribe(NimBLECharacteristic *pCharacteristic, ble_gap_con
   SS2K_LOG(BLE_SERVER_LOG_TAG, "%s", str.c_str());
 }
 
-//This might be worth depreciating. With multiple clients connected (SS2k App, + Training App), it at least needs to be an int, not a bool. 
+// This might be worth depreciating. With multiple clients connected (SS2k App, + Training App), it at least needs to be an int, not a bool.
 void SpinBLEServer::setClientSubscribed(NimBLEUUID pUUID, bool subscribe) {
   if (pUUID == HEARTCHARACTERISTIC_UUID) {
     spinBLEServer.clientSubscribed.Heartrate = subscribe;

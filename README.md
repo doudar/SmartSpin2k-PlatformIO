@@ -3,7 +3,7 @@
 # You can now visit us at [Facebook](https://www.facebook.com/groups/716297469953492/)
 # There's now a companion App! 
 
-A brand new shiny Companion app for SmartSpin2k is availiable! [SS2kConfigApp](https://github.com/doudar/SS2kConfigApp/tree/develop) (Google Play Store Coming Soon). 
+A brand new shiny Companion app for SmartSpin2k is availiable! [SS2kConfigApp](https://github.com/doudar/SS2kConfigApp/tree/develop) 
 
 You can get it from the Apple App Store here:
 
@@ -20,8 +20,6 @@ You can get it from the Apple App Store here:
   </div>
 
 </div>
-
-If you have Android, it will be on the Play Store soon, but in the meantime, you can side load it using the .apk (located in the .zip) in the releases section of the repository: [SS2kConfigApp](https://github.com/doudar/SS2kConfigApp/releases)
 
 # About
 SmartSpin2k is a DIY project that allows you to turn any spin bike into a smart trainer. With SmartSpin2k, you can connect your spin bike to Zwift, TrainerRoad, or other popular training apps. This allows you to control your bike's resistance automatically, track your performance, and compete with other riders online.

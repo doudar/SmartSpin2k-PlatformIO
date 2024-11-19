@@ -487,14 +487,14 @@ void HTTP_Server::settingsProcessor() {
   }
   if (!server.arg("shiftStep").isEmpty()) {
     uint64_t shiftStep = server.arg("shiftStep").toInt();
-    if (shiftStep >= 50 && shiftStep <= 6000) {
+    if (shiftStep >= 10 && shiftStep <= 6000) {
       userConfig->setShiftStep(shiftStep);
     }
     wasSettingsUpdate = true;
   }
   if (!server.arg("stepperPower").isEmpty()) {
     uint64_t stepperPower = server.arg("stepperPower").toInt();
-    if (stepperPower >= 500 && stepperPower <= 2000) {
+    if (stepperPower >= 100 && stepperPower <= 2000) {
       userConfig->setStepperPower(stepperPower);
       ss2k->updateStepperPower();
     }
@@ -513,7 +513,7 @@ void HTTP_Server::settingsProcessor() {
   }
   if (!server.arg("ERGSensitivity").isEmpty()) {
     float ERGSensitivity = server.arg("ERGSensitivity").toFloat();
-    if (ERGSensitivity >= .5 && ERGSensitivity <= 20) {
+    if (ERGSensitivity >= .1 && ERGSensitivity <= 20) {
       userConfig->setERGSensitivity(ERGSensitivity);
     }
   }
@@ -548,7 +548,7 @@ void HTTP_Server::settingsProcessor() {
   }
   if (!server.arg("inclineMultiplier").isEmpty()) {
     float inclineMultiplier = server.arg("inclineMultiplier").toFloat();
-    if (inclineMultiplier >= 1 && inclineMultiplier <= 10) {
+    if (inclineMultiplier >= 0 && inclineMultiplier <= 10) {
       userConfig->setInclineMultiplier(inclineMultiplier);
     }
   }

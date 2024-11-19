@@ -37,6 +37,9 @@ void PowerTable::runERG() {
     if (ss2k->isUpdating) {
       return;
     }
+    if (spinBLEServer.spinDownFlag) {
+      return;
+    }
 
     if (rtConfig->cad.getValue() > 0 && rtConfig->watts.getValue() > 0) {
       hasConnectedPowerMeter = spinBLEClient.connectedPM;
@@ -67,6 +70,10 @@ void PowerTable::runERG() {
 
     if (ss2k->resetPowerTableFlag) {
       powerTable->reset();
+      userConfig->setHMin(INT32_MIN);
+      userConfig->setHMax(INT32_MIN);
+      rtConfig->setHomed(false);
+      userConfig->saveToLittleFS();
     }
     loopCounter++;
   }
@@ -76,7 +83,7 @@ void PowerBuffer::set(int i) {
   this->powerEntry[i].readings++;
   this->powerEntry[i].watts          = rtConfig->watts.getValue();
   this->powerEntry[i].cad            = rtConfig->cad.getValue();
-  this->powerEntry[i].targetPosition = rtConfig->getCurrentIncline() / 100;  // dividing by 100 to save memory.
+  this->powerEntry[i].targetPosition = ss2k->getCurrentPosition() / 100;  // dividing by 100 to save memory.
 }
 
 void PowerBuffer::reset() {
@@ -131,6 +138,12 @@ void PowerTable::processPowerValue(PowerBuffer& powerBuffer, int cadence, Measur
 void PowerTable::setStepperMinMax() {
   int32_t _return = RETURN_ERROR;
 
+  // if Homing was preformed, skip estimating min_max
+  if (rtConfig->getHomed()) {
+    SS2K_LOG(ERG_MODE_LOG_TAG, "Using detected travel limits during homing");
+    return;
+  }
+
   // if the FTMS device reports resistance feedback, skip estimating min_max
   if (rtConfig->resistance.getValue() > 0) {
     rtConfig->setMinStep(-DEFAULT_STEPPER_TRAVEL);
@@ -144,13 +157,13 @@ void PowerTable::setStepperMinMax() {
     _return = this->lookup(minBreakWatts, NORMAL_CAD);
     if (_return != RETURN_ERROR) {
       // never set less than one shift below current incline.
-      if ((_return >= rtConfig->getCurrentIncline()) && (rtConfig->watts.getValue() > userConfig->getMinWatts())) {
-        _return = rtConfig->getCurrentIncline() - userConfig->getShiftStep();
+      if ((_return >= ss2k->getCurrentPosition()) && (rtConfig->watts.getValue() > userConfig->getMinWatts())) {
+        _return = ss2k->getCurrentPosition() - userConfig->getShiftStep();
         SS2K_LOG(ERG_MODE_LOG_TAG, "Min Position too close to current incline: %d", _return);
       }
       // never set above max step.
       if (_return >= rtConfig->getMaxStep()) {
-        _return = rtConfig->getCurrentIncline() - userConfig->getShiftStep() * 2;
+        _return = ss2k->getCurrentPosition() - userConfig->getShiftStep() * 2;
         SS2K_LOG(ERG_MODE_LOG_TAG, "Min Position above max!: %d", _return);
       }
       rtConfig->setMinStep(_return);
@@ -163,13 +176,13 @@ void PowerTable::setStepperMinMax() {
     _return = this->lookup(maxBreakWatts, NORMAL_CAD);
     if (_return != RETURN_ERROR) {
       // never set less than one shift above current incline.
-      if ((_return <= rtConfig->getCurrentIncline()) && (rtConfig->watts.getValue() < userConfig->getMaxWatts())) {
-        _return = rtConfig->getCurrentIncline() + userConfig->getShiftStep();
+      if ((_return <= ss2k->getCurrentPosition()) && (rtConfig->watts.getValue() < userConfig->getMaxWatts())) {
+        _return = ss2k->getCurrentPosition() + userConfig->getShiftStep();
         SS2K_LOG(ERG_MODE_LOG_TAG, "Max Position too close to current incline: %d", _return);
       }
       // never set below min step.
       if (_return <= rtConfig->getMinStep()) {
-        _return = rtConfig->getCurrentIncline() + userConfig->getShiftStep() * 2;
+        _return = ss2k->getCurrentPosition() + userConfig->getShiftStep() * 2;
         SS2K_LOG(ERG_MODE_LOG_TAG, "Max Position below min!: %d", _return);
       }
       rtConfig->setMaxStep(_return);
@@ -838,6 +851,9 @@ bool PowerTable::_manageSaveState() {
     file.read((uint8_t*)&version, sizeof(version));
     int savedQuality;
     file.read((uint8_t*)&savedQuality, sizeof(savedQuality));
+    bool savedHomed;
+    file.read((uint8_t*)&savedHomed, sizeof(savedHomed));
+
     if (version != TABLE_VERSION) {
       SS2K_LOG(POWERTABLE_LOG_TAG, "Expected power table version %d, found version %d", TABLE_VERSION, version);
       file.close();
@@ -853,32 +869,35 @@ bool PowerTable::_manageSaveState() {
       this->_save();
     }
 
-    SS2K_LOG(POWERTABLE_LOG_TAG, "Loading power table version %d, Size %d", version, savedQuality);
+    SS2K_LOG(POWERTABLE_LOG_TAG, "Loading power table version %d, Size %d, Homed %d", version, savedQuality, savedHomed);
 
-    // Initialize a counter for reliable positions
-    int reliablePositions = 0;
+    // If both current and saved tables were created with homing, we can skip position reliability checks
+    bool canSkipReliabilityChecks = savedHomed && rtConfig->getHomed();
+    
+    if (!canSkipReliabilityChecks) {
+      // Initialize a counter for reliable positions
+      int reliablePositions = 0;
 
-    // Check if we have at least 3 reliable positions in the active table in order to determine a reliable offset to load the saved table
-    for (int i = 0; i < POWERTABLE_CAD_SIZE; i++) {
-      for (int j = 0; j < POWERTABLE_WATT_SIZE; j++) {
-        int16_t savedTargetPosition = INT16_MIN;
-        int8_t savedReadings        = 0;
-        file.read((uint8_t*)&savedTargetPosition, sizeof(savedTargetPosition));
-        file.read((uint8_t*)&savedReadings, sizeof(savedReadings));
-        // Does the saved file have a position that the active session has also recorded?
-        // We start comparing at watt position 3 (j>2) because low resistance positions are notoriously unreliable.
-        if ((j > 2) && (this->tableRow[i].tableEntry[j].targetPosition != INT16_MIN) && (this->tableRow[i].tableEntry[j].readings > MINIMUM_RELIABLE_POSITIONS) &&
-            (savedReadings > 0)) {
-          reliablePositions++;
+      // Check if we have at least 3 reliable positions in the active table in order to determine a reliable offset to load the saved table
+      for (int i = 0; i < POWERTABLE_CAD_SIZE; i++) {
+        for (int j = 0; j < POWERTABLE_WATT_SIZE; j++) {
+          int16_t savedTargetPosition = INT16_MIN;
+          int8_t savedReadings        = 0;
+          file.read((uint8_t*)&savedTargetPosition, sizeof(savedTargetPosition));
+          file.read((uint8_t*)&savedReadings, sizeof(savedReadings));
+          // Does the saved file have a position that the active session has also recorded?
+          // We start comparing at watt position 3 (j>2) because low resistance positions are notoriously unreliable.
+          if ((j > 2) && (this->tableRow[i].tableEntry[j].targetPosition != INT16_MIN) && (this->tableRow[i].tableEntry[j].readings > MINIMUM_RELIABLE_POSITIONS) &&
+              (savedReadings > 0)) {
+            reliablePositions++;
+          }
         }
       }
-    }
-    if (reliablePositions < MINIMUM_RELIABLE_POSITIONS) {  // Do we have enough active data in order to calculate a (good) offset when we load the new table?
-      SS2K_LOG(POWERTABLE_LOG_TAG, "Not enough matching positions to load the Power Table. %d of %d needed.", reliablePositions, MINIMUM_RELIABLE_POSITIONS);
-      file.close();
-      return false;
-    } else {
-      // continue loading
+      if (reliablePositions < MINIMUM_RELIABLE_POSITIONS) {  // Do we have enough active data in order to calculate a (good) offset when we load the new table?
+        SS2K_LOG(POWERTABLE_LOG_TAG, "Not enough matching positions to load the Power Table. %d of %d needed.", reliablePositions, MINIMUM_RELIABLE_POSITIONS);
+        file.close();
+        return false;
+      }
     }
     file.close();
 
@@ -894,44 +913,62 @@ bool PowerTable::_manageSaveState() {
     // get these reads done, so that we're in the right position to read the data from the file.
     file.read((uint8_t*)&version, sizeof(version));
     file.read((uint8_t*)&savedQuality, sizeof(savedQuality));
-    std::vector<float> offsetDifferences;
-
-    reliablePositions = 0;
-    // Read table entries and calculate offsets
-    for (int i = 0; i < POWERTABLE_CAD_SIZE; i++) {
-      for (int j = 0; j < POWERTABLE_WATT_SIZE; j++) {
-        int16_t savedTargetPosition = INT16_MIN;
-        int8_t savedReadings        = 0;
-        file.read((uint8_t*)&savedTargetPosition, sizeof(savedTargetPosition));
-        file.read((uint8_t*)&savedReadings, sizeof(savedReadings));
-        if ((this->tableRow[i].tableEntry[j].targetPosition != INT16_MIN) && (savedTargetPosition != INT16_MIN) && (savedReadings > 0) &&
-            (this->tableRow[i].tableEntry[j].readings > MINIMUM_RELIABLE_POSITIONS)) {
-          int offset = this->tableRow[i].tableEntry[j].targetPosition - savedTargetPosition;
-          offsetDifferences.push_back(offset);
-          SS2K_LOG(POWERTABLE_LOG_TAG, "offset %d", offset);
-          reliablePositions++;
+    file.read((uint8_t*)&savedHomed, sizeof(savedHomed));
+    
+    float averageOffset = 0;
+    if (!canSkipReliabilityChecks) {
+      std::vector<float> offsetDifferences;
+      int reliablePositions = 0;
+      // Read table entries and calculate offsets
+      for (int i = 0; i < POWERTABLE_CAD_SIZE; i++) {
+        for (int j = 0; j < POWERTABLE_WATT_SIZE; j++) {
+          int16_t savedTargetPosition = INT16_MIN;
+          int8_t savedReadings        = 0;
+          file.read((uint8_t*)&savedTargetPosition, sizeof(savedTargetPosition));
+          file.read((uint8_t*)&savedReadings, sizeof(savedReadings));
+          if ((this->tableRow[i].tableEntry[j].targetPosition != INT16_MIN) && (savedTargetPosition != INT16_MIN) && (savedReadings > 0) &&
+              (this->tableRow[i].tableEntry[j].readings > MINIMUM_RELIABLE_POSITIONS)) {
+            int offset = this->tableRow[i].tableEntry[j].targetPosition - savedTargetPosition;
+            offsetDifferences.push_back(offset);
+            SS2K_LOG(POWERTABLE_LOG_TAG, "offset %d", offset);
+            reliablePositions++;
+          }
+          this->tableRow[i].tableEntry[j].targetPosition = savedTargetPosition;
+          this->tableRow[i].tableEntry[j].readings       = savedReadings;
         }
-        this->tableRow[i].tableEntry[j].targetPosition = savedTargetPosition;
-        this->tableRow[i].tableEntry[j].readings       = savedReadings;
-        // SS2K_LOG(POWERTABLE_LOG_TAG, "Position %d, %d, Target %d, Readings %d, loaded", i, j, this->tableRow[i].tableEntry[j].targetPosition,
-        //          this->tableRow[i].tableEntry[j].readings);
       }
+      averageOffset = std::accumulate(offsetDifferences.begin(), offsetDifferences.end(), 0.0) / offsetDifferences.size();
+    } else {
+      // If both tables were created with homing, just load the values directly
+      for (int i = 0; i < POWERTABLE_CAD_SIZE; i++) {
+        for (int j = 0; j < POWERTABLE_WATT_SIZE; j++) {
+          int16_t savedTargetPosition = INT16_MIN;
+          int8_t savedReadings        = 0;
+          file.read((uint8_t*)&savedTargetPosition, sizeof(savedTargetPosition));
+          file.read((uint8_t*)&savedReadings, sizeof(savedReadings));
+          this->tableRow[i].tableEntry[j].targetPosition = savedTargetPosition;
+          this->tableRow[i].tableEntry[j].readings       = savedReadings;
+        }
+      }
+      SS2K_LOG(POWERTABLE_LOG_TAG, "Both tables were created with homing, loaded values directly");
     }
 
     file.close();
-    float averageOffset = std::accumulate(offsetDifferences.begin(), offsetDifferences.end(), 0.0) / offsetDifferences.size();
 
-    // Apply the offset to all loaded positions except for INT16_MIN values
-    for (int i = 0; i < POWERTABLE_CAD_SIZE; i++) {
-      for (int j = 0; j < POWERTABLE_WATT_SIZE; j++) {
-        if (this->tableRow[i].tableEntry[j].targetPosition != INT16_MIN) {
-          this->tableRow[i].tableEntry[j].targetPosition += averageOffset;
+    // Apply the offset if needed
+    if (!canSkipReliabilityChecks) {
+      for (int i = 0; i < POWERTABLE_CAD_SIZE; i++) {
+        for (int j = 0; j < POWERTABLE_WATT_SIZE; j++) {
+          if (this->tableRow[i].tableEntry[j].targetPosition != INT16_MIN) {
+            this->tableRow[i].tableEntry[j].targetPosition += averageOffset;
+          }
         }
       }
+      SS2K_LOG(POWERTABLE_LOG_TAG, "Power Table loaded with an offset of %d.", averageOffset);
     }
+    
     // set the flag so it isn't loaded again this session.
     this->_hasBeenLoadedThisSession = true;
-    SS2K_LOG(POWERTABLE_LOG_TAG, "Power Table loaded with an offset of %d.", averageOffset);
   }
 
   // Implement saving on a timer
@@ -960,6 +997,10 @@ bool PowerTable::_save() {
 
   int size = getNumReadings();
   file.write((uint8_t*)&size, sizeof(size));
+
+  // Write homing state
+  bool isHomed = rtConfig->getHomed();
+  file.write((uint8_t*)&isHomed, sizeof(isHomed));
 
   // Write table entries
   for (int i = 0; i < POWERTABLE_CAD_SIZE; i++) {
@@ -1063,7 +1104,7 @@ void ErgMode::computeResistance() {
   if (actualDelta != 0) {
     rtConfig->setTargetIncline(rtConfig->getTargetIncline() + (100 * actualDelta));
   } else {
-    rtConfig->setTargetIncline(rtConfig->getCurrentIncline());
+    rtConfig->setTargetIncline(ss2k->getCurrentPosition());
   }
   oldResistance = rtConfig->resistance;
 }
@@ -1085,7 +1126,7 @@ void ErgMode::computeErg() {
     newWatts.setTarget(userConfig->getMinWatts());
   }
 
-  bool isUserSpinning = this->_userIsSpinning(newCadence, rtConfig->getCurrentIncline());
+  bool isUserSpinning = this->_userIsSpinning(newCadence, ss2k->getCurrentPosition());
   if (!isUserSpinning) {
     SS2K_LOG(ERG_MODE_LOG_TAG, "ERG Mode but no User Spin");
     return;
@@ -1106,11 +1147,11 @@ void ErgMode::_setPointChangeState(int newCadence, Measurement& newWatts) {
 
   // Sanity check for targets
   if (tableResult != RETURN_ERROR) {
-    if (rtConfig->watts.getValue() > newWatts.getTarget() && tableResult > rtConfig->getCurrentIncline()) {
+    if (rtConfig->watts.getValue() > newWatts.getTarget() && tableResult > ss2k->getCurrentPosition()) {
       SS2K_LOG(ERG_MODE_LOG_TAG, "Table Result Failed High Test: %d", tableResult);
       tableResult = RETURN_ERROR;
     }
-    if (rtConfig->watts.getValue() < newWatts.getTarget() && tableResult < rtConfig->getCurrentIncline()) {
+    if (rtConfig->watts.getValue() < newWatts.getTarget() && tableResult < ss2k->getCurrentPosition()) {
       SS2K_LOG(ERG_MODE_LOG_TAG, "Table Result Failed Low Test: %d", tableResult);
       tableResult = RETURN_ERROR;
     }
@@ -1121,14 +1162,14 @@ void ErgMode::_setPointChangeState(int newCadence, Measurement& newWatts) {
     int wattChange  = newWatts.getTarget() - newWatts.getValue();
     float deviation = ((float)wattChange * 100.0) / ((float)newWatts.getTarget());
     float factor    = abs(deviation) > 10 ? userConfig->getERGSensitivity() * 2 : userConfig->getERGSensitivity() / 2;
-    tableResult     = rtConfig->getCurrentIncline() + (wattChange * factor);
+    tableResult     = ss2k->getCurrentPosition() + (wattChange * factor);
   }
 
   SS2K_LOG(ERG_MODE_LOG_TAG, "SetPoint changed:%dw PowerTable Result: %d", newWatts.getTarget(), tableResult);
   _updateValues(newCadence, newWatts, tableResult);
 
-  if (rtConfig->getTargetIncline() != rtConfig->getCurrentIncline()) {  // add some time to wait while the knob moves to target position.
-    int timeToAdd = abs(rtConfig->getCurrentIncline() - rtConfig->getTargetIncline());
+  if (rtConfig->getTargetIncline() != ss2k->getCurrentPosition()) {  // add some time to wait while the knob moves to target position.
+    int timeToAdd = abs(ss2k->getCurrentPosition() - rtConfig->getTargetIncline());
     if (timeToAdd > 5000) {  // 5 seconds
       SS2K_LOG(ERG_MODE_LOG_TAG, "Capping ERG seek time to 5 seconds");
       timeToAdd = 5000;
@@ -1145,14 +1186,14 @@ void ErgMode::_inSetpointState(int newCadence, Measurement& newWatts) {
   float deviation = ((float)wattChange * 100.0) / ((float)newWatts.getTarget());
 
   float factor     = abs(deviation) > 10 ? userConfig->getERGSensitivity() : userConfig->getERGSensitivity() / 2;
-  float newIncline = rtConfig->getCurrentIncline() + (wattChange * factor);
+  float newIncline = ss2k->getCurrentPosition() + (wattChange * factor);
 
   _updateValues(newCadence, newWatts, newIncline);
 }
 
 void ErgMode::_updateValues(int newCadence, Measurement& newWatts, float newIncline) {
   rtConfig->setTargetIncline(newIncline);
-  _writeLog(rtConfig->getCurrentIncline(), newIncline, this->setPoint, newWatts.getTarget(), this->watts.getValue(), newWatts.getValue(), this->cadence, newCadence);
+  _writeLog(ss2k->getCurrentPosition(), newIncline, this->setPoint, newWatts.getTarget(), this->watts.getValue(), newWatts.getValue(), this->cadence, newCadence);
 
   this->watts    = newWatts;
   this->setPoint = newWatts.getTarget();

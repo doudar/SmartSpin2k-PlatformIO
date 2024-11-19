@@ -1,0 +1,63 @@
+name: Update Changelog
+
+on:
+  pull_request:
+    branches:
+      - develop
+    types: [opened, synchronize, reopened]
+
+jobs:
+  update-changelog:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Update Changelog
+        run: |
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
+          echo "Latest tag: $LATEST_TAG"
+          
+          if ! grep -q "## \[Unreleased\]" CHANGELOG.md; then
+            echo "No [Unreleased] section found"
+            exit 0
+          fi
+          
+          FIRST_VERSION=$(grep -oP "## \[\K[0-9]+\.[0-9]+\.[0-9]+" CHANGELOG.md | head -1 || echo "0.0.0")
+          
+          if [ "$LATEST_TAG" = "$FIRST_VERSION" ]; then
+            echo "Latest tag matches first version in changelog"
+            exit 0
+          fi
+          
+          # Create temporary files
+          echo -e "# Changelog\n\nAll notable changes to this project will be documented in this file.\n\nThe format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)\nand this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n\n## [Unreleased]\n\n### Added\n\n### Changed\n\n### Hardware\n" > header.tmp
+          
+          # Update the old unreleased section
+          sed "0,/## \[Unreleased\]/s/## \[Unreleased\]/## [$LATEST_TAG]/" CHANGELOG.md | tail -n +7 > content.tmp
+          
+          # Combine files
+          cat header.tmp content.tmp > CHANGELOG.md
+          rm header.tmp content.tmp
+          
+          if git diff --quiet CHANGELOG.md; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add CHANGELOG.md
+          git commit -m "Update changelog for version $LATEST_TAG"
+          git push

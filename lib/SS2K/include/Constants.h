@@ -59,6 +59,11 @@
 #define FITNESSMACHINEPOWERRANGE_UUID           NimBLEUUID((uint16_t)0x2AD8)
 #define FITNESSMACHINEINCLINATIONRANGE_UUID     NimBLEUUID((uint16_t)0x2AD5)
 
+// Wattbike Service
+#define WATTBIKE_SERVICE_UUID NimBLEUUID("b4cc1223-bc02-4cae-adb9-1217ad2860d1")
+#define WATTBIKE_READ_UUID    NimBLEUUID("b4cc1224-bc02-4cae-adb9-1217ad2860d1")
+#define WATTBIKE_WRITE_UUID   NimBLEUUID("b4cc1225-bc02-4cae-adb9-1217ad2860d1")
+
 // GATT service/characteristic UUIDs for Flywheel Bike from ptx2/gymnasticon/
 #define FLYWHEEL_UART_SERVICE_UUID NimBLEUUID("6e400001-b5a3-f393-e0a9-e50e24dcca9e")
 #define FLYWHEEL_UART_RX_UUID      NimBLEUUID("6e400002-b5a3-f393-e0a9-e50e24dcca9e")
