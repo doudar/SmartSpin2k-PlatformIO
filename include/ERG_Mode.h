@@ -19,6 +19,7 @@
 class PowerEntry {
  public:
   int watts;
+  int resistance; 
   int32_t targetPosition;
   int cad;
   int readings;
@@ -28,6 +29,7 @@ class PowerEntry {
     this->targetPosition = 0;
     this->cad            = 0;
     this->readings       = 0;
+    this->resistance     = 0; 
   }
 };
 
