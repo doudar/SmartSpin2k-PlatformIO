@@ -10,18 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
+- Modernized web interface.
+- Refactored http server.
 
 ### Hardware
-
-
-## [24.11.16]
-
-### Added
-
-### Changed
-
-### Hardware
-
 
 ## [24.12.7]
 
