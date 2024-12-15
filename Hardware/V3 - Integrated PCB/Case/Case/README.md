@@ -1,1 +1,0 @@
-<img src="/Pictures/Version3.jpg" alt="Hardware 3.0"/> 

@@ -69,6 +69,7 @@ void userParameters::setDefaults() {
   udpLogEnabled         = false;
   hMin                  = INT32_MIN;
   hMax                  = INT32_MIN;
+  homingSensitivity     = DEFAULT_HOMING_SENSITIVITY;
 }
 
 //---------------------------------------------------------------------------------
@@ -104,6 +105,7 @@ String userParameters::returnJSON() {
   doc["udpLogEnabled"]         = udpLogEnabled;
   doc["hMin"]                  = hMin;
   doc["hMax"]                  = hMax;
+  doc["homingSensitivity"]     = homingSensitivity;
 
   String output;
   serializeJson(doc, output);
@@ -154,6 +156,7 @@ void userParameters::saveToLittleFS() {
   doc["udpLogEnabled"] = udpLogEnabled;
   doc["hMin"]          = hMin;
   doc["hMax"]          = hMax;
+  doc["homingSensitivity"]     = homingSensitivity;
 
   // Serialize JSON to file
   if (serializeJson(doc, file) == 0) {
@@ -237,6 +240,9 @@ void userParameters::loadFromLittleFS() {
   }
   if (!doc["hMax"].isNull()) {
     setHMax(doc["hMax"]);
+  }
+  if (!doc["homingSensitivity"].isNull()) {
+    setHomingSensitivity(doc["homingSensitivity"]);
   }
 
   SS2K_LOG(CONFIG_LOG_TAG, "Config File Loaded: %s", configFILENAME);

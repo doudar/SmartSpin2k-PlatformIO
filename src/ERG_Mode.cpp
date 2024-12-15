@@ -69,9 +69,11 @@ void PowerTable::runERG() {
     }
 
     if (ss2k->resetPowerTableFlag) {
+      LittleFS.remove(POWER_TABLE_FILENAME);
       powerTable->reset();
       userConfig->setHMin(INT32_MIN);
       userConfig->setHMax(INT32_MIN);
+      spinBLEServer.spinDownFlag = 0;
       rtConfig->setHomed(false);
       userConfig->saveToLittleFS();
     }
@@ -873,7 +875,7 @@ bool PowerTable::_manageSaveState() {
 
     // If both current and saved tables were created with homing, we can skip position reliability checks
     bool canSkipReliabilityChecks = savedHomed && rtConfig->getHomed();
-    
+
     if (!canSkipReliabilityChecks) {
       // Initialize a counter for reliable positions
       int reliablePositions = 0;
@@ -914,7 +916,7 @@ bool PowerTable::_manageSaveState() {
     file.read((uint8_t*)&version, sizeof(version));
     file.read((uint8_t*)&savedQuality, sizeof(savedQuality));
     file.read((uint8_t*)&savedHomed, sizeof(savedHomed));
-    
+
     float averageOffset = 0;
     if (!canSkipReliabilityChecks) {
       std::vector<float> offsetDifferences;
@@ -966,7 +968,7 @@ bool PowerTable::_manageSaveState() {
       }
       SS2K_LOG(POWERTABLE_LOG_TAG, "Power Table loaded with an offset of %d.", averageOffset);
     }
-    
+
     // set the flag so it isn't loaded again this session.
     this->_hasBeenLoadedThisSession = true;
   }
