@@ -312,7 +312,7 @@ input:focus + .slider {
     color: #2a9df4;
     background: 0 0;
     border: none;
-    width: auto;
+    width: 100%;
     padding: 0;
 }
 .input-group {
