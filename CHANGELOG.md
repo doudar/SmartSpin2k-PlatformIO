@@ -14,6 +14,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Hardware
 
 
+## [24.12.8]
+
+### Added
+
+### Changed
+- Modernized web interface.
+- Refactored http server.
+
+### Hardware
+
 ## [24.12.7]
 
 ### Added

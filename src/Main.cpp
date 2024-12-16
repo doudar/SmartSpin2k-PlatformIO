@@ -121,8 +121,8 @@ void setup() {
   // Check for firmware update. It's important that this stays before BLE &
   // HTTP setup because otherwise they use too much traffic and the device
   // fails to update which really sucks when it corrupts your settings.
-  startWifi();
-  httpServer.FirmwareUpdate();
+  WiFiManager::startWifi();
+  HTTPFirmware::checkForUpdates();
 
   pinMode(currentBoard.shiftUpPin, INPUT_PULLUP);    // Push-Button with input Pullup
   pinMode(currentBoard.shiftDownPin, INPUT_PULLUP);  // Push-Button with input Pullup
@@ -192,7 +192,7 @@ void SS2K::maintenanceLoop(void *pvParameters) {
     // Run what used to be in the ERG Mode Task.
     powerTable->runERG();
     // Run what used to be in the WebClient Task.
-    httpServer.webClientUpdate();
+    httpServer.update();
     // If we're in ERG mode, modify shift commands to inc/dec the target watts instead.
     ss2k->FTMSModeShiftModifier();
     // If we have a resistance bike attached, slow down when we're close to the limits.
@@ -236,11 +236,12 @@ void SS2K::maintenanceLoop(void *pvParameters) {
     // Handle flag set for rebooting
     if (ss2k->rebootFlag) {
       static bool _loopOnce = false;
-      vTaskDelay(1000 / portTICK_RATE_MS);
       // Let the main task loop complete once before rebooting
       if (_loopOnce) {
+        SS2K_LOG(MAIN_LOG_TAG, "Reboot flag set.");
         // Important to keep this delay high in order to allow coms to finish.
-        vTaskDelay(1000 / portTICK_RATE_MS);
+        logHandler.writeLogs();
+        vTaskDelay(2000 / portTICK_RATE_MS);
         ESP.restart();
       }
       _loopOnce = true;
@@ -283,7 +284,7 @@ void SS2K::maintenanceLoop(void *pvParameters) {
         // Inactivity detected
         if (((millis() - rebootTimer) > 1800000)) {
           // Timer expired
-          SS2K_LOGW(MAIN_LOG_TAG, "Rebooting due to inactivity.");
+          SS2K_LOG(MAIN_LOG_TAG, "Rebooting due to inactivity.");
           ss2k->rebootFlag = true;
           logHandler.writeLogs();
           webSocketAppender.Loop();
@@ -389,9 +390,9 @@ void SS2K::FTMSModeShiftModifier() {
 void SS2K::restartWifi() {
   httpServer.stop();
   vTaskDelay(100 / portTICK_RATE_MS);
-  stopWifi();
+  WiFiManager::stopWifi();
   vTaskDelay(100 / portTICK_RATE_MS);
-  startWifi();
+  WiFiManager::startWifi();
   httpServer.start();
 }
 
@@ -471,7 +472,7 @@ void SS2K::moveStepper() {
     if (rtConfig->cad.getValue() > 1) {
       stepper->enableOutputs();
       stepper->setAutoEnable(false);
-    }else{
+    } else {
       stepper->setAutoEnable(true);
     }
 
@@ -535,7 +536,7 @@ void SS2K::resetIfShiftersHeld() {
       userConfig->saveToLittleFS();
       vTaskDelay(200 / portTICK_PERIOD_MS);
     }
-    ESP.restart();
+    ss2k->rebootFlag = true;
   }
 }
 

@@ -1,67 +1,139 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-  <style type="text/css">
-html {
-  background-color: #03245c;
-} 
-    </style>
-
-  <title>SmartSpin2k Web Server</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SmartSpin2k</title>
+  <style>html{background-color:#03245c}</style>
 </head>
-<fieldset><legend><a href="http://github.com/doudar/SmartSpin2k">http://github.com/doudar/SmartSpin2k</a></legend>
 <body>
-  <h1 style="text-align: center;"><strong>SmartSpin2k</strong></h1>
-  <h2>
-    <p style="text-align: center;"><strong><a href="shift.html">Web Shifter</a></strong></p>
-    <p style="text-align: center;"><strong><a href="hrtowatts.html">Heartrate to Watts Setup</a></strong></p>
-    <p style="text-align: center;"><strong><a href="settings.html">Settings</a></strong></p>
-    <p style="text-align: center;"><strong><a href="bluetoothscanner.html">Bluetooth Scanner</a></strong></p>
-    <p style="text-align: center;"><strong><a href="develop.html">Developer Tools</a></strong></p>
-    <p><a href=https://github.com/doudar/SmartSpin2k/wiki>SS2K Help</a></p>
-  </h2>
-</fieldset>
+  <div class="page-container">
+    <header>
+      <nav aria-label="Main navigation">
+        <a href="http://github.com/doudar/SmartSpin2k" class="github-link">GitHub</a>
+      </nav>
+    </header>
 
-<p style="text-align: center; color: blanchedalmond;"><label id="firmwareVersion">loading</label></p>
-</body>
+    <main>
+      <h1 class="brand">SmartSpin2k</h1>
+      
+      <div class="dev-tools-grid">
+        <a href="shift.html" class="dev-tool-card">
+          <div class="tool-icon">⚙️</div>
+          <div class="tool-content">
+            <h2>Web Shifter</h2>
+            <p>Control gear shifting manually</p>
+            <ul class="tool-features">
+              <li>Manual gear control</li>
+              <li>Real-time shifting</li>
+            </ul>
+          </div>
+          <div class="card-arrow">→</div>
+        </a>
 
-<script>
-  //Update values on specified interval loading late because this tiny webserver hates frequent requests
-  setInterval(function () {
-    if (document.getElementById("firmwareVersion").innerHTML == "loading"){
-      requestConfigValues();
+        <a href="hrtowatts.html" class="dev-tool-card">
+          <div class="tool-icon">❤️</div>
+          <div class="tool-content">
+            <h2>Heart Rate to Watts</h2>
+            <p>Configure power estimation from heart rate</p>
+            <ul class="tool-features">
+              <li>Power estimation</li>
+              <li>HR zone configuration</li>
+            </ul>
+          </div>
+          <div class="card-arrow">→</div>
+        </a>
+
+        <a href="settings.html" class="dev-tool-card">
+          <div class="tool-icon">⚡</div>
+          <div class="tool-content">
+            <h2>Settings</h2>
+            <p>Configure device settings and preferences</p>
+            <ul class="tool-features">
+              <li>Device configuration</li>
+              <li>System preferences</li>
+            </ul>
+          </div>
+          <div class="card-arrow">→</div>
+        </a>
+
+        <a href="bluetoothscanner.html" class="dev-tool-card">
+          <div class="tool-icon">📱</div>
+          <div class="tool-content">
+            <h2>Bluetooth Scanner</h2>
+            <p>Connect and manage Bluetooth devices</p>
+            <ul class="tool-features">
+              <li>Device scanning</li>
+              <li>Connection management</li>
+            </ul>
+          </div>
+          <div class="card-arrow">→</div>
+        </a>
+
+        <a href="develop.html" class="dev-tool-card">
+          <div class="tool-icon">🔧</div>
+          <div class="tool-content">
+            <h2>Developer Tools</h2>
+            <p>Advanced tools and debugging options</p>
+            <ul class="tool-features">
+              <li>Debug console</li>
+              <li>System diagnostics</li>
+            </ul>
+          </div>
+          <div class="card-arrow">→</div>
+        </a>
+
+        <a href="http://SmartSpin2k.com" class="dev-tool-card">
+          <div class="tool-icon">🛒</div>
+          <div class="tool-content">
+            <h2>SmartSpin2k Website</h2>
+            <p>Purchase accessories for your SmartSpin2k</p>
+            <ul class="tool-features">
+              <li>Official accessories</li>
+              <li>Product catalog</li>
+            </ul>
+          </div>
+          <div class="card-arrow">→</div>
+        </a>
+      </div>
+
+      <footer>
+        <a href="https://github.com/doudar/SmartSpin2k/wiki" class="help-link">SS2K Help</a>
+        <div class="version-info">
+          <span id="firmwareVersion">loading</span>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    function requestConfigValues() {
+      fetch('/configJSON')
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById("firmwareVersion").textContent = data.firmwareVersion;
+        })
+        .catch(error => console.error('Error:', error));
     }
 
-  }, 1000);
+    function loadCss() {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'style.css';
+      document.head.appendChild(link);
+    }
 
-  function requestConfigValues() {
-    var xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function () {
-      if (this.readyState == 4 && this.status == 200) {
-        var obj = JSON.parse(this.responseText);
-        document.getElementById("firmwareVersion").innerHTML = obj.firmwareVersion;
+    window.addEventListener('load', () => {
+      setTimeout(loadCss, 100);
+      requestConfigValues();
+    });
+
+    // Retry loading firmware version if it's still showing "loading"
+    setInterval(() => {
+      if (document.getElementById("firmwareVersion").textContent === "loading") {
+        requestConfigValues();
       }
-    };
-    xhttp.open("GET", "/configJSON", true);
-    xhttp.send();
-  }
-
-  //define function to load css
-  var loadCss = function () {
-    var cssLink = document.createElement('link');
-    cssLink.rel = 'stylesheet';
-    cssLink.href = 'style.css';
-    var head = document.getElementsByTagName('head')[0];
-    head.parentNode.insertBefore(cssLink, head);
-  };
-
-  //Delay loading css to not swamp webserver
-  window.addEventListener('load', function () {
-    setTimeout(loadCss, 100);
-  }, false);
-
-</script>
-
+    }, 1000);
+  </script>
+</body>
 </html>
