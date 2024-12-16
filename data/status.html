@@ -251,7 +251,8 @@
 
     document.getElementById('saveLogButton').addEventListener('click', () => {
       const debugElement = document.getElementById('debug');
-      const logContent = debugElement.textContent;
+      logContent = debugElement.textContent;
+      logContent = logContent.replace(/(\[\s*\d+\])/g, '\n$1');
       const blob = new Blob([logContent], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
