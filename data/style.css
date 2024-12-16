@@ -97,9 +97,7 @@ nav a:hover {
 }
 .shift-button,
 .shifter-container,
-.simulator-card {
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
+
 .dev-tool-card:hover,
 .menu-item:hover {
     background: rgba(42, 157, 244, 0.15);
@@ -229,81 +227,7 @@ a {
     overflow: auto;
     text-shadow: 0 0 4px rgba(200, 200, 200, 0.5);
 }
-.simulator-grid {
-    display: grid;
-    gap: 1.5rem;
-    padding: 1rem 0;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-}
-.simulator-card {
-    background: rgba(3, 37, 76, 0.6);
-    border-radius: 12px;
-    padding: 1.5rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-.simulator-card:hover {
-    background: rgba(3, 37, 76, 0.8);
-    border-color: rgba(255, 255, 255, 0.2);
-}
-.card-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 1.5rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid rgba(42, 157, 244, 0.3);
-}
-.simulator-content {
-    padding: 1rem;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 8px;
-}
-.value-display {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 1.2rem;
-}
-.auto-update {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.7);
-}
-.simulator-slider {
-    -webkit-appearance: none;
-    width: 100%;
-    height: 6px;
-    background: #03254c;
-    border-radius: 3px;
-    outline: 0;
-    margin: 1rem 0;
-}
-.simulator-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 20px;
-    height: 20px;
-    background: #2a9df4;
-    border-radius: 50%;
-    cursor: pointer;
-    border: 2px solid #fff;
-    transition: background 0.2s;
-}
-.simulator-slider::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    background: #2a9df4;
-    border-radius: 50%;
-    cursor: pointer;
-    border: 2px solid #fff;
-    transition: background 0.2s;
-}
-.simulator-slider:focus::-webkit-slider-thumb {
-    box-shadow: 0 0 0 3px rgba(42, 157, 244, 0.4);
-}
-.simulator-slider:focus::-moz-range-thumb {
-    box-shadow: 0 0 0 3px rgba(42, 157, 244, 0.4);
-}
+
 .shifter-container {
     max-width: 600px;
     margin: 2rem auto;
@@ -916,7 +840,6 @@ footer {
     .dev-tools-grid,
     .menu-grid,
     .metrics-grid,
-    .simulator-grid,
     .status-grid {
         grid-template-columns: 1fr;
     }
@@ -944,7 +867,6 @@ footer {
     }
     .menu-item,
     .metric-card,
-    .simulator-card,
     .status-group {
         padding: 1.25rem;
     }

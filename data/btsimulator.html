@@ -1,11 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>SmartSpin2k BLE Simulator</title>
-  <style>html{background-color:#03245c}</style>
+  <style>
+    html {
+      background-color: #03245c
+    }
+  </style>
 </head>
+
 <body>
   <div class="page-container">
     <header>
@@ -18,103 +24,86 @@
     <main>
       <div id="loadingWatermark" class="watermark" aria-hidden="true">Loading</div>
       <h1 class="brand">BLE Simulator</h1>
-
       <div class="settings-section">
-        <div class="simulator-grid">
+        <div class="setting-group">
           <!-- Heart Rate Simulation -->
-          <div class="simulator-card">
-            <div class="card-header">
-              <h2>Heart Rate</h2>
-              <label class="switch">
-                <input type="checkbox" id="hrOutput" onchange="toggleHRCheckbox(this,true)">
-                <span class="slider"></span>
-              </label>
-            </div>
-            <div class="simulator-content">
-              <div class="value-display">
-                <span id="hrValue">-- BPM</span>
-              </div>
-              <div class="slider-group">
-                <input type="range" id="hrSlider" min="40" max="250" value="0" step="1" 
-                       onchange="updateHrSlider()" class="simulator-slider">
-              </div>
-            </div>
+          <h2>Heart Rate</h2>
+          <label class="switch">
+            <input type="checkbox" id="hrOutput" onchange="toggleHRCheckbox(this,true)">
+            <span class="slider"></span>
+          </label>
+          <div class="value-display">
+            <span id="hrValue">-- BPM</span>
           </div>
-
-          <!-- Power Output Simulation -->
-          <div class="simulator-card">
-            <div class="card-header">
-              <h2>Power Output</h2>
-              <label class="switch">
-                <input type="checkbox" id="wattsOutput" onchange="toggleWattsCheckbox(this,true)">
-                <span class="slider"></span>
-              </label>
-            </div>
-            <div id="wattsInputContainer" class="simulator-content">
-              <div class="value-display">
-                <span id="wattsValue">-- W</span>
-                <label class="auto-update">
-                  <input type="checkbox" id="autoUpdateWatts" onclick="autoUpdateWattsClick()">
-                  Auto Update
-                </label>
-              </div>
-              <div class="slider-group">
-                <input type="range" id="wattsSlider" min="0" max="600" value="0" step="1"
-                       onchange="updateWattsSlider()" class="simulator-slider">
-              </div>
-            </div>
+          <div class="slider-group">
+            <input type="range" id="hrSlider" min="40" max="250" value="0" step="1" onchange="updateHrSlider()"
+              class="slider-container">
           </div>
+        </div>
 
-          <!-- Cadence Simulation -->
-          <div class="simulator-card">
-            <div class="card-header">
-              <h2>Cadence</h2>
-              <label class="switch">
-                <input type="checkbox" id="cadOutput" onchange="toggleCadCheckbox(this,true)">
-                <span class="slider"></span>
-              </label>
-            </div>
-            <div id="cadInputContainer" class="simulator-content">
-              <div class="value-display">
-                <span id="cadValue">-- RPM</span>
-                <label class="auto-update">
-                  <input type="checkbox" id="autoUpdateCadence" onclick="autoUpdateCadenceClick()">
-                  Auto Update
-                </label>
-              </div>
-              <div class="slider-group">
-                <input type="range" id="cadSlider" min="0" max="180" value="0" step="1"
-                       onchange="updateCadSlider()" class="simulator-slider">
-              </div>
-            </div>
+        <!-- Power Output Simulation -->
+        <div class="setting-group">
+          <h2>Power Output</h2>
+          <label class="switch">
+            <input type="checkbox" id="wattsOutput" onchange="toggleWattsCheckbox(this,true)">
+            <span class="slider"></span>
+          </label>
+          <div class="value-display">
+            <span id="wattsValue">-- W</span>
+            <label class="auto-update">
+              <input type="checkbox" id="autoUpdateWatts" onclick="autoUpdateWattsClick()">
+              Auto Update
+            </label>
           </div>
+          <div class="slider-group">
+            <input type="range" id="wattsSlider" min="0" max="600" value="0" step="1" onchange="updateWattsSlider()"
+              class="slider-container">
+          </div>
+        </div>
 
-          <!-- ERG Mode Simulation -->
-          <div class="simulator-card">
-            <div class="card-header">
-              <h2>ERG Mode</h2>
-              <label class="switch">
-                <input type="checkbox" id="enableErgCheckbox" onchange="toggleEnableErgCheckbox(this)">
-                <span class="slider"></span>
-              </label>
-            </div>
-            <div class="simulator-content">
-              <div class="value-display">
-                <span id="targetWattsValue">-- W</span>
-                <label class="switch">
-                  <input type="checkbox" id="targetWattsOutput" onchange="toggleTargetWattsCheckbox(this,true)">
-                  <span class="slider"></span>
-                </label>
-              </div>
-              <div class="slider-group">
-                <input type="range" id="targetWattsSlider" min="0" max="600" value="0" step="1"
-                       onchange="updateTargetWattsSlider()" class="simulator-slider">
-              </div>
-            </div>
+        <!-- Cadence Simulation -->
+
+        <div class="setting-group">
+          <h2>Cadence</h2>
+          <label class="switch">
+            <input type="checkbox" id="cadOutput" onchange="toggleCadCheckbox(this,true)">
+            <span class="slider"></span>
+          </label>
+          <div class="value-display">
+            <span id="cadValue">-- RPM</span>
+            <label class="auto-update">
+              <input type="checkbox" id="autoUpdateCadence" onclick="autoUpdateCadenceClick()">
+              Auto Update
+            </label>
+          </div>
+          <div class="slider-group">
+            <input type="range" id="cadSlider" min="0" max="180" value="0" step="1" onchange="updateCadSlider()"
+              class="slider-container">
+          </div>
+        </div>
+
+        <!-- ERG Mode Simulation -->
+        <div class="setting-group">
+          <h2>ERG Mode</h2>
+          <label class="switch">
+            <input type="checkbox" id="enableErgCheckbox" onchange="toggleEnableErgCheckbox(this)">
+            <span class="slider"></span>
+          </label>
+          <div class="value-display">
+            <span id="targetWattsValue">-- W</span>
+            <label class="switch">
+              <input type="checkbox" id="targetWattsOutput" onchange="toggleTargetWattsCheckbox(this,true)">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="slider-group">
+            <input type="range" id="targetWattsSlider" min="0" max="600" value="0" step="1"
+              onchange="updateTargetWattsSlider()" class="slider-container">
           </div>
         </div>
       </div>
-    </main>
+  </div>
+  </main>
   </div>
 
   <script>
@@ -129,7 +118,7 @@
         document.getElementById("hrSlider").hidden = true;
         document.getElementById("hrValue").hidden = true;
       }
-      
+
       if (updateServer) {
         fetch('/hrslider?value=' + (element.checked ? 'enable' : 'disable'), { method: 'GET' })
           .catch(error => console.error('Error:', error));
@@ -138,7 +127,7 @@
 
     function toggleWattsCheckbox(element, updateServer) {
       document.getElementById("wattsInputContainer").hidden = !element.checked;
-      
+
       if (updateServer) {
         fetch('/wattsslider?value=' + (element.checked ? 'enable' : 'disable'), { method: 'GET' })
           .catch(error => console.error('Error:', error));
@@ -147,7 +136,7 @@
 
     function toggleCadCheckbox(element, updateServer) {
       document.getElementById("cadInputContainer").hidden = !element.checked;
-      
+
       if (updateServer) {
         fetch('/cadslider?value=' + (element.checked ? 'enable' : 'disable'), { method: 'GET' })
           .catch(error => console.error('Error:', error));
@@ -185,7 +174,7 @@
     function toggleTargetWattsCheckbox(element, updateServer) {
       document.getElementById("targetWattsSlider").hidden = !element.checked;
       document.getElementById("targetWattsValue").hidden = !element.checked;
-      
+
       if (updateServer) {
         fetch('/targetwattsslider?value=' + (element.checked ? 'enable' : 'disable'), { method: 'GET' })
           .catch(error => console.error('Error:', error));
@@ -281,4 +270,5 @@
     });
   </script>
 </body>
+
 </html>
