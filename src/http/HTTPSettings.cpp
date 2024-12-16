@@ -126,6 +126,13 @@ void HTTPSettings::processERGSettings(WebServer& server) {
     }
   }
 
+  if (!server.arg("homingSensitivity").isEmpty()) {
+    int homingSensitivity = server.arg("homingSensitivity").toInt();
+    if (homingSensitivity >= 10 && homingSensitivity <= 100) {
+      userConfig->setHomingSensitivity(homingSensitivity);
+    }
+  }
+
   if (!server.arg("inclineMultiplier").isEmpty()) {
     float inclineMultiplier = server.arg("inclineMultiplier").toFloat();
     if (inclineMultiplier >= 0 && inclineMultiplier <= 10) {

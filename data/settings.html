@@ -122,6 +122,22 @@
           </div>
 
           <div class="setting-group">
+            <label for="homingSensitivity" class="setting-label tooltip">
+              Homing Force
+              <span class="tooltiptext">Decrease if the SmartSpin2k grinds during homing.</span>
+            </label>
+            <div class="slider-group">
+              <button type="button" onclick="clickStep(document.getElementById('homingSensitivity'), '-')" class="adjust-button">−</button>
+              <div class="slider-container">
+                <output id="homingSensitivityValue">0</output>
+                <input type="range" id="homingSensitivity" name="homingSensitivity" min="10" max="100" value="0" step="1"
+                       onchange="updateSliderAndSend(this, document.getElementById('homingSensitivityValue'))">
+              </div>
+              <button type="button" onclick="clickStep(document.getElementById('homingSensitivity'), '+')" class="adjust-button">+</button>
+            </div>
+          </div>
+
+          <div class="setting-group">
             <label for="minWatts" class="setting-label tooltip">
               Min Brake Watts
               <span class="tooltiptext">Set the minimum watts until stepper stops. 0 disables check.</span>
@@ -204,7 +220,7 @@
           <div class="setting-group">
             <label class="setting-label tooltip">
               UDP Logging
-              <span class="tooltiptext">Send log-messages via UDP Port 10.000</span>
+              <span class="tooltiptext">Send log-messages via UDP Port 10000</span>
             </label>
             <label class="switch">
               <input type="checkbox" name="udpLogEnabled" id="udpLogEnabled" onchange="sendSetting(this)">
@@ -342,8 +358,6 @@
         } else {
           params.append(element.name, element.value);
         }
-        
-        params.append('shiftStep', document.getElementById('shiftStep').value);
         
         ['stealthChop', 'autoUpdate', 'stepperDir', 'shifterDir', 'udpLogEnabled'].forEach(id => {
           if (document.getElementById(id).checked) {

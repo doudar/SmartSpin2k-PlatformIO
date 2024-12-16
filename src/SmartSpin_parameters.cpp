@@ -125,43 +125,12 @@ void userParameters::saveToLittleFS() {
     return;
   }
 
-  // Allocate a temporary JsonDocument
-  // Don't forget to change the capacity to match your requirements.
-  // Use arduinojson.org/assistant to compute the capacity.
-  DynamicJsonDocument doc(USERCONFIG_JSON_SIZE);
-
-  // Set the values in the document
-  // commented items are not needed in save file
-
-  doc["firmwareUpdateURL"]     = firmwareUpdateURL;
-  doc["deviceName"]            = deviceName;
-  doc["shiftStep"]             = shiftStep;
-  doc["stepperPower"]          = stepperPower;
-  doc["stepperSpeed"]          = stepperSpeed;
-  doc["stealthChop"]           = stealthChop;
-  doc["inclineMultiplier"]     = inclineMultiplier;
-  doc["powerCorrectionFactor"] = powerCorrectionFactor;
-  doc["ERGSensitivity"]        = ERGSensitivity;
-  doc["autoUpdate"]            = autoUpdate;
-  doc["ssid"]                  = ssid;
-  doc["password"]              = password;
-  doc["connectedPowerMeter"]   = connectedPowerMeter;
-  doc["connectedHeartMonitor"] = connectedHeartMonitor;
-  doc["connectedRemote"]       = connectedRemote;
-  // doc["foundDevices"]          = foundDevices;
-  doc["maxWatts"]      = maxWatts;
-  doc["minWatts"]      = minWatts;
-  doc["shifterDir"]    = shifterDir;
-  doc["stepperDir"]    = stepperDir;
-  doc["udpLogEnabled"] = udpLogEnabled;
-  doc["hMin"]          = hMin;
-  doc["hMax"]          = hMax;
-  doc["homingSensitivity"]     = homingSensitivity;
-
-  // Serialize JSON to file
-  if (serializeJson(doc, file) == 0) {
+  // Get JSON string from returnJSON() and write to file
+  String jsonStr = returnJSON();
+  if (file.print(jsonStr) == 0) {
     SS2K_LOG(CONFIG_LOG_TAG, "Failed to write to file");
   }
+
   // Close the file
   file.close();
 }
@@ -300,16 +269,9 @@ void physicalWorkingCapacity::saveToLittleFS() {
     return;
   }
 
-  StaticJsonDocument<500> doc;
-
-  doc["session1HR"]  = session1HR;
-  doc["session1Pwr"] = session1Pwr;
-  doc["session2HR"]  = session2HR;
-  doc["session2Pwr"] = session2Pwr;
-  doc["hr2Pwr"]      = hr2Pwr;
-
-  // Serialize JSON to file
-  if (serializeJson(doc, file) == 0) {
+  // Get JSON string from returnJSON() and write to file
+  String jsonStr = returnJSON();
+  if (file.print(jsonStr) == 0) {
     SS2K_LOG(CONFIG_LOG_TAG, "Failed to write to file");
   }
   // Close the file
