@@ -88,10 +88,21 @@ void HTTPRoutes::_handleLittleFSFile() {
 
   if (LittleFS.exists(filename)) {
     File file = LittleFS.open(filename, FILE_READ);
-    if (fileType == "gz") {
-      fileType = "html";
+    String mimeType;
+    if (fileType == "js") {
+      mimeType = "application/javascript";
+    } else if (fileType == "css") {
+      mimeType = "text/css";
+    } else if (fileType == "html" || fileType == "gz") {
+      mimeType = "text/html";
+    } else {
+      mimeType = "text/" + fileType;
     }
-    currentServer->streamFile(file, "text/" + fileType);
+    
+    // Add caching headers
+    currentServer->sendHeader("Cache-Control", "public, max-age=31536000");
+    currentServer->sendHeader("Expires", "Thu, 31 Dec 2037 23:59:59 GMT");
+    currentServer->streamFile(file, mimeType);
     file.close();
     SS2K_LOG(HTTP_SERVER_LOG_TAG, "Served %s", filename.c_str());
   } else if (!LittleFS.exists("/index.html")) {
