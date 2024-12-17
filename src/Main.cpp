@@ -500,6 +500,8 @@ void IRAM_ATTR SS2K::shiftUp() {  // Handle the shift up interrupt IRAM_ATTR is 
   if (ss2k->deBounce()) {
     if (!digitalRead(currentBoard.shiftUpPin)) {  // double checking to make sure the interrupt wasn't triggered by emf
       rtConfig->setShifterPosition(rtConfig->getShifterPosition() - 1 + userConfig->getShifterDir() * 2);
+      // Stop homing initiation
+      spinBLEServer.spinDownFlag = 0;
     } else {
       ss2k->lastDebounceTime = 0;
     }  // Probably Triggered by EMF, reset the debounce
@@ -510,6 +512,8 @@ void IRAM_ATTR SS2K::shiftDown() {  // Handle the shift down interrupt
   if (ss2k->deBounce()) {
     if (!digitalRead(currentBoard.shiftDownPin)) {  // double checking to make sure the interrupt wasn't triggered by emf
       rtConfig->setShifterPosition(rtConfig->getShifterPosition() + 1 - userConfig->getShifterDir() * 2);
+      // Stop homing initiation
+      spinBLEServer.spinDownFlag = 0;
     } else {
       ss2k->lastDebounceTime = 0;
     }  // Probably Triggered by EMF, reset the debounce
@@ -598,7 +602,7 @@ void SS2K::goHome(bool bothDirections) {
         userConfig->setHMax(INT32_MIN);
         return;
       }
-      stalled = (driver.SG_RESULT() < threshold - 50);
+      stalled = (driver.SG_RESULT() < threshold - userConfig->getHomingSensitivity());
     }
     stepper->forceStop();
     vTaskDelay(100 / portTICK_PERIOD_MS);
@@ -627,7 +631,7 @@ void SS2K::goHome(bool bothDirections) {
           userConfig->setHMax(INT32_MIN);
           return;
         }
-        stalled = (driver.SG_RESULT() < threshold - 100);
+        stalled = (driver.SG_RESULT() < threshold - userConfig->getHomingSensitivity());
       }
       stepper->forceStop();
       fitnessMachineService.spinDown(0x02);

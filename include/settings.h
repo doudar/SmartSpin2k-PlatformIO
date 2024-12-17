@@ -249,9 +249,9 @@ const char* const DEFAULT_PASSWORD = "password";
 #endif
 
 // Max size of userconfig
-#define USERCONFIG_JSON_SIZE 1524 + DEBUG_LOG_BUFFER_SIZE
+#define USERCONFIG_JSON_SIZE 2000 + DEBUG_LOG_BUFFER_SIZE
 
-#define RUNTIMECONFIG_JSON_SIZE 512 + DEBUG_LOG_BUFFER_SIZE
+#define RUNTIMECONFIG_JSON_SIZE 1000 + DEBUG_LOG_BUFFER_SIZE
 
 // PowerTable Version
 #define TABLE_VERSION 5
@@ -308,11 +308,14 @@ const char* const DEFAULT_PASSWORD = "password";
 // Initial and web scan duration.
 #define DEFAULT_SCAN_DURATION 5
 
+// Default homing sensitivity value
+#define DEFAULT_HOMING_SENSITIVITY 50
+
 // BLE automatic reconnect duration. Set this low to avoid interruption.
 #define BLE_RECONNECT_SCAN_DURATION 5
 
 // Task Stack Sizes
-#define MAIN_STACK 6500
+#define MAIN_STACK       6500
 #define BLE_CLIENT_STACK 6000
 
 // Uncomment to enable stack size debugging info
