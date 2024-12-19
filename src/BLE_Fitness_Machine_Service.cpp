@@ -317,10 +317,13 @@ void BLE_Fitness_Machine_Service::processFTMSWrite() {
   }
 }
 
-bool BLE_Fitness_Machine_Service::spinDown() {
-  std::string rxValue = fitnessMachineStatusCharacteristic->getValue();
+bool BLE_Fitness_Machine_Service::spinDown(uint8_t response) {
+  uint8_t spinStatus[2] = {FitnessMachineStatus::SpinDownStatus, response};
+  fitnessMachineStatusCharacteristic->setValue(spinStatus, 2);
+  fitnessMachineStatusCharacteristic->notify();
+  /*std::string rxValue = fitnessMachineStatusCharacteristic->getValue();
   if (rxValue[0] != 0x14) {
-    return false;
+   return false;
   }
   uint8_t spinStatus[2] = {0x14, 0x01};
   SS2K_LOG(FMTS_SERVER_LOG_TAG, "Spin Status: %d", rxValue[1]);
@@ -328,21 +331,17 @@ bool BLE_Fitness_Machine_Service::spinDown() {
   if (rxValue[1] == 0x01) {
     SS2K_LOG(FMTS_SERVER_LOG_TAG, "Spin Down Initiated");
     Serial.printf("Spin Down Initiated");
-    vTaskDelay(1000 / portTICK_RATE_MS);
+    vTaskDelay(500 / portTICK_RATE_MS);
+    spinStatus[1] = 0x01;  // Initiated
+    fitnessMachineStatusCharacteristic->setValue(spinStatus, 2);
+    fitnessMachineStatusCharacteristic->notify();
+    vTaskDelay(500 / portTICK_RATE_MS);
     spinStatus[1] = 0x04;  // send Stop Pedaling
     fitnessMachineStatusCharacteristic->setValue(spinStatus, 2);
     fitnessMachineStatusCharacteristic->notify();
-    vTaskDelay(1000 / portTICK_RATE_MS);
-    spinStatus[1] = 0x02;  // Success
-    fitnessMachineStatusCharacteristic->setValue(spinStatus, 2);
-    fitnessMachineStatusCharacteristic->notify();
-    ss2k->goHome(true);
-  }
-
-  if (rxValue[1] == 0x04) {
     SS2K_LOG(FMTS_SERVER_LOG_TAG, "Stop Pedaling");
     Serial.printf("Stop Pedaling");
-    vTaskDelay(1000 / portTICK_RATE_MS);
+    vTaskDelay(500 / portTICK_RATE_MS);
     spinStatus[1] = 0x02;  // Success
     fitnessMachineStatusCharacteristic->setValue(spinStatus, 2);
     fitnessMachineStatusCharacteristic->notify();
@@ -357,8 +356,7 @@ bool BLE_Fitness_Machine_Service::spinDown() {
     fitnessMachineControlPoint->setValue(returnValue, 3);
     fitnessMachineControlPoint->indicate();
     fitnessMachineStatusCharacteristic->notify();
-    ss2k->goHome(true);
-  }
+  }*/
 
   return true;
 }

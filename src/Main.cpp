@@ -19,6 +19,7 @@
 #include <Constants.h>
 #include "settings.h"
 #include "BLE_Wattbike_Service.h"
+#include "BLE_Fitness_Machine_Service.h"
 
 // Stepper Motor Serial
 HardwareSerial stepperSerial(2);
@@ -107,6 +108,11 @@ void setup() {
   userConfig->printFile();  // Print userConfig->contents to serial
   userConfig->saveToLittleFS();
 
+  // if we have homing data, use that instead.
+  if (userConfig->getHMax() != INT32_MIN && userConfig->getHMin() != INT32_MIN) {
+    spinBLEServer.spinDownFlag = 1;
+  }
+
   // load PWC for HR to Pwr Calculation
   userPWC->loadFromLittleFS();
   userPWC->printFile();
@@ -160,11 +166,6 @@ void setup() {
                           20,                        /* priority of the task */
                           &maintenanceLoopTask,      /* Task handle to keep track of created task */
                           1);                        /* pin task to core */
-
-  // if we have homing data, use that instead.
-  if (userConfig->getHMax() != INT32_MIN && userConfig->getHMin() != INT32_MIN) {
-    spinBLEServer.spinDownFlag = 1;
-  }
 }
 
 void loop() {  // Delete this task so we can make one that's more memory efficient.
@@ -195,7 +196,7 @@ void SS2K::maintenanceLoop(void *pvParameters) {
     // If we're in ERG mode, modify shift commands to inc/dec the target watts instead.
     ss2k->FTMSModeShiftModifier();
     // If we have a resistance bike attached, slow down when we're close to the limits.
-    if (ss2k->pelotonIsConnected && !rtConfig->getHomed()) {
+    if (ss2k->pelotonIsConnected && !rtConfig->getHomed() && !spinBLEServer.spinDownFlag) {
       int speed           = userConfig->getStepperSpeed();
       float resistance    = rtConfig->resistance.getValue();
       float maxResistance = rtConfig->getMaxResistance();
@@ -249,6 +250,7 @@ void SS2K::maintenanceLoop(void *pvParameters) {
     if (ss2k->resetDefaultsFlag) {
       LittleFS.format();
       userConfig->setDefaults();
+      powerTable->reset();
       userConfig->saveToLittleFS();
       ss2k->resetDefaultsFlag = false;
       ss2k->rebootFlag        = true;
@@ -413,19 +415,27 @@ void SS2K::moveStepper() {
         }
         ss2k->targetPosition = rtConfig->getTargetIncline();
       } else if (rtConfig->getFTMSMode() == FitnessMachineControlPointProcedure::SetTargetResistanceLevel) {
+        rtConfig->setTargetIncline(ss2k->currentPosition + ((rtConfig->resistance.getTarget() - rtConfig->resistance.getValue()) * 20));
         ss2k->targetPosition = rtConfig->getTargetIncline();
       } else {
         // Simulation Mode
         ss2k->targetPosition = rtConfig->getShifterPosition() * userConfig->getShiftStep();
         ss2k->targetPosition += rtConfig->getTargetIncline() * userConfig->getInclineMultiplier();
       }
+    } else {
+      // periodically log external control message
+      static long int lastTime = millis();
+      if (millis() - lastTime > 5000) {
+        SS2K_LOG(MAIN_LOG_TAG, "External Control Mode");
+        lastTime = millis();
+      }
     }
 
     if (ss2k->syncMode) {
       stepper->stopMove();
-      vTaskDelay(100 / portTICK_PERIOD_MS);
+      SS2K_LOG(MAIN_LOG_TAG, "Sync Mode");
       stepper->setCurrentPosition(ss2k->targetPosition);
-      vTaskDelay(100 / portTICK_PERIOD_MS);
+      ss2k->syncMode = false;
     }
 
     if (ss2k->pelotonIsConnected && !rtConfig->getHomed()) {
@@ -458,11 +468,11 @@ void SS2K::moveStepper() {
       }
     }
 
-    if (connectedClientCount() > 0) {
-      stepper->setAutoEnable(false);  // Keep the stepper from rolling back due to head tube slack. Motor Driver still lowers power between moves
+    if (rtConfig->cad.getValue() > 1) {
       stepper->enableOutputs();
-    } else {
-      stepper->setAutoEnable(true);  // disable output FETs between moves so stepper can cool. Can still shift.
+      stepper->setAutoEnable(false);
+    }else{
+      stepper->setAutoEnable(true);
     }
 
     if (_stepperDir != userConfig->getStepperDir()) {  // User changed the config direction of the stepper wires
@@ -490,6 +500,8 @@ void IRAM_ATTR SS2K::shiftUp() {  // Handle the shift up interrupt IRAM_ATTR is 
   if (ss2k->deBounce()) {
     if (!digitalRead(currentBoard.shiftUpPin)) {  // double checking to make sure the interrupt wasn't triggered by emf
       rtConfig->setShifterPosition(rtConfig->getShifterPosition() - 1 + userConfig->getShifterDir() * 2);
+      // Stop homing initiation
+      spinBLEServer.spinDownFlag = 0;
     } else {
       ss2k->lastDebounceTime = 0;
     }  // Probably Triggered by EMF, reset the debounce
@@ -500,6 +512,8 @@ void IRAM_ATTR SS2K::shiftDown() {  // Handle the shift down interrupt
   if (ss2k->deBounce()) {
     if (!digitalRead(currentBoard.shiftDownPin)) {  // double checking to make sure the interrupt wasn't triggered by emf
       rtConfig->setShifterPosition(rtConfig->getShifterPosition() + 1 - userConfig->getShifterDir() * 2);
+      // Stop homing initiation
+      spinBLEServer.spinDownFlag = 0;
     } else {
       ss2k->lastDebounceTime = 0;
     }  // Probably Triggered by EMF, reset the debounce
@@ -535,75 +549,100 @@ void SS2K::setupTMCStepperDriver(bool reset) {
     stepper->setAutoEnable(true);
     stepper->setSpeedInHz(DEFAULT_STEPPER_SPEED);
     stepper->setAcceleration(STEPPER_ACCELERATION);
-    stepper->setDelayToDisable(1000);
+    stepper->setDelayToDisable(65535);
     // TMC Driver Setup
     driver.begin();
   }
 
-  driver.pdn_disable(true);
-  driver.mstep_reg_select(true);
-  driver.microsteps(4);   // Set microsteps to 1/8th
-  driver.iholddelay(10);  // Controls the number of clock cycles for motor
-  // power down after standstill is detected
-  driver.TPOWERDOWN(128);
-  driver.toff(5);
+  driver.pdn_disable(true);       // Use PDN pin to enable UART communication instead of grounding signal
+  driver.mstep_reg_select(true);  // Use register instead of ms1&ms2 pins for microstep selection
+  driver.microsteps(4);           // Set microsteps to 1/8th
+  driver.iholddelay(10);          // Controls the number of clock cycles for motor power down after standstill is detected
+  driver.TPOWERDOWN(128);         // delay until hold current
+  driver.toff(5);                 // needs >0 for driver enable. 1-15 controls duration of slow decay phase of pwm.
   this->updateStealthChop();
   driver.irun(currentBoard.pwrScaler);
-  driver.ihold((uint8_t)(currentBoard.pwrScaler * .5));  // hold current % 0-DRIVER_MAX_PWR_SCALER
+  driver.ihold((uint8_t)(currentBoard.pwrScaler * .1));  // hold current % 0-DRIVER_MAX_PWR_SCALER
   this->updateStepperSpeed();
   this->updateStepperPower();
   this->setCurrentPosition(stepper->getCurrentPosition());
 }
 
 void SS2K::goHome(bool bothDirections) {
-  if (currentBoard.name != r2_NAME) {
-    SS2K_LOG(MAIN_LOG_TAG, "Board Doesn't support homing");
-    return;
-  }
-  SS2K_LOG(MAIN_LOG_TAG, "Homing...");
-  updateStepperPower(100);
-  driver.irun(2);  // low power
-  driver.ihold((uint8_t)(1));
-  this->updateStepperSpeed(800);
-
-  bool stalled  = false;
-  int threshold = 0;
-  vTaskDelay(1000 / portTICK_PERIOD_MS);
-  if (bothDirections) {
-    stepper->runForward();
-    vTaskDelay(250 / portTICK_PERIOD_MS);  // wait until stable
-    threshold = driver.SG_RESULT();        // take reading
-    Serial.printf("%d ", driver.SG_RESULT());
-    vTaskDelay(250 / portTICK_PERIOD_MS);
-    while (!stalled) {
-      stalled = (driver.SG_RESULT() < threshold - 75);
+  if (stepper) {
+    if (currentBoard.name != r2_NAME) {
+      SS2K_LOG(MAIN_LOG_TAG, "Board Doesn't support homing");
+      fitnessMachineService.spinDown(0x02);
+      return;
     }
-    stalled = false;
+    SS2K_LOG(MAIN_LOG_TAG, "Homing...");
+    SS2K_LOG(MAIN_LOG_TAG, "Updating driver...");
+    fitnessMachineService.spinDown(0x01);
+    updateStepperPower(userConfig->getStepperPower() * .2);
+    vTaskDelay(50 / portTICK_PERIOD_MS);
+    driver.irun(0x02);  // low power
+    vTaskDelay(50 / portTICK_PERIOD_MS);
+    driver.ihold(0x01);
+    vTaskDelay(50 / portTICK_PERIOD_MS);
+    int threshold = 0;
+    bool stalled  = false;
+    // Back off limit in case we are alread here.
+    stepper->move(userConfig->getShiftStep(), true);
+    this->updateStepperSpeed(1500);
+    vTaskDelay(500 / portTICK_PERIOD_MS);
+    stepper->runBackward();
+    vTaskDelay(250 / portTICK_PERIOD_MS);
+    threshold = driver.SG_RESULT();
+    Serial.printf("%d ", driver.SG_RESULT());
+    vTaskDelay(300 / portTICK_PERIOD_MS);
+    fitnessMachineService.spinDown(0x04);
+    while (!stalled) {
+      if (abs(rtConfig->getShifterPosition() - ss2k->lastShifterPosition)) {  // let the user abort with the shift button.
+        userConfig->setHMin(INT32_MIN);
+        userConfig->setHMax(INT32_MIN);
+        return;
+      }
+      stalled = (driver.SG_RESULT() < threshold - userConfig->getHomingSensitivity());
+    }
     stepper->forceStop();
-    stepper->disableOutputs();
-    vTaskDelay(2000 / portTICK_PERIOD_MS);
-    rtConfig->setMaxStep(stepper->getCurrentPosition() - 200);
-    SS2K_LOG(MAIN_LOG_TAG, "Max Position found: %d.", rtConfig->getMaxStep());
-    rtConfig->setMaxResistance(rtConfig->resistance.getValue()); 
-    stepper->enableOutputs();
+    vTaskDelay(100 / portTICK_PERIOD_MS);
+    stepper->moveTo(stepper->getCurrentPosition() + userConfig->getShiftStep());
+    while (stepper->isRunning()) {
+      vTaskDelay(10 / portTICK_PERIOD_MS);
+    }
+    stepper->setCurrentPosition((int32_t)0);
+    ss2k->setTargetPosition(0);
+    rtConfig->setMinStep(0);
+    SS2K_LOG(MAIN_LOG_TAG, "Min Position found: %d.", rtConfig->getMinStep());
+    stalled = false;
+    fitnessMachineService.spinDown(0x02);
+    if (bothDirections) {
+      // Back off limit in case we are alread here.
+      this->updateStepperSpeed(1500);
+      vTaskDelay(500 / portTICK_PERIOD_MS);
+      stepper->runForward();
+      vTaskDelay(1000 / portTICK_PERIOD_MS);  // wait until stable
+      threshold = driver.SG_RESULT();         // take reading
+      Serial.printf("%d ", driver.SG_RESULT());
+      vTaskDelay(250 / portTICK_PERIOD_MS);
+      while (!stalled) {
+        if (abs(rtConfig->getShifterPosition() - ss2k->lastShifterPosition)) {  // let the user abort with the shift button.
+          userConfig->setHMin(INT32_MIN);
+          userConfig->setHMax(INT32_MIN);
+          return;
+        }
+        stalled = (driver.SG_RESULT() < threshold - userConfig->getHomingSensitivity());
+      }
+      stepper->forceStop();
+      fitnessMachineService.spinDown(0x02);
+      vTaskDelay(500 / portTICK_PERIOD_MS);
+      rtConfig->setMaxStep(stepper->getCurrentPosition() - 200);
+      SS2K_LOG(MAIN_LOG_TAG, "Max Position found: %d.", rtConfig->getMaxStep());
+      this->updateStepperSpeed();
+      stepper->moveTo(0, true);
+    }
   }
-  stepper->runBackward();
-  vTaskDelay(250 / portTICK_PERIOD_MS);
-  threshold = driver.SG_RESULT();
-  Serial.printf("%d ", driver.SG_RESULT());
-  vTaskDelay(250 / portTICK_PERIOD_MS);
-  while (!stalled) {
-    stalled = (driver.SG_RESULT() < threshold - 75);
-  }
-  stepper->forceStop();
-  stepper->disableOutputs();
-  vTaskDelay(100 / portTICK_PERIOD_MS);
-  stepper->setCurrentPosition((int32_t)0);
-  rtConfig->setMinStep(stepper->getCurrentPosition() + userConfig->getShiftStep());
-  SS2K_LOG(MAIN_LOG_TAG, "Min Position found: %d.", rtConfig->getMinStep());
-  rtConfig->setMinResistance(rtConfig->resistance.getValue());
-  stepper->enableOutputs();
-
+  fitnessMachineService.spinDown(0x02);
   // Start Saving Settings
   if (bothDirections) {
     userConfig->setHMin(rtConfig->getMinStep());
@@ -615,6 +654,7 @@ void SS2K::goHome(bool bothDirections) {
   userConfig->saveToLittleFS();
   rtConfig->setHomed(true);
   this->setupTMCStepperDriver(true);
+  ss2k->setTargetPosition(0);
 }
 
 // Applies current power to driver
@@ -622,7 +662,7 @@ void SS2K::updateStepperPower(int pwr) {
   uint16_t rmsPwr = (pwr == 0) ? userConfig->getStepperPower() : pwr;
   driver.rms_current(rmsPwr);
   uint16_t current = driver.cs_actual();
-  SS2K_LOG(MAIN_LOG_TAG, "Stepper power is now %d.  read:cs=%U", (pwr == 0) ? userConfig->getStepperPower() : pwr, current);
+  SS2K_LOG(MAIN_LOG_TAG, "Stepper power is now %d.  read:cs=%U", rmsPwr, current);
 }
 
 // Applies current StealthChop to driver
@@ -638,8 +678,8 @@ void SS2K::updateStealthChop() {
 void SS2K::updateStepperSpeed(int speed) {
   if (speed == 0) {
     speed = userConfig->getStepperSpeed();
-    SS2K_LOG(MAIN_LOG_TAG, "StepperSpeed is now %d", speed);
   }
+  SS2K_LOG(MAIN_LOG_TAG, "StepperSpeed is now %d", speed);
   stepper->setSpeedInHz(speed);
 }
 

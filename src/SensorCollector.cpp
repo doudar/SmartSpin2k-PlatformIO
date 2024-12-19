@@ -75,7 +75,13 @@ void collectAndSet(NimBLEUUID charUUID, NimBLEUUID serviceUUID, NimBLEAddress ad
   logBufLength += snprintf(logBuf + logBufLength, kLogBufMaxLength - logBufLength, " POS(%d)", ss2k->getCurrentPosition());
   strncat(logBuf + logBufLength, " ]", kLogBufMaxLength - logBufLength);
 
+  // Peloton data screams, so only log one per second.
+  static long int lastTime = millis();
+  if ((charUUID == PELOTON_DATA_UUID) && (millis() - lastTime < 1000)) return;
+
   SS2K_LOG(BLE_COMMON_LOG_TAG, "%s", logBuf);
+
+  if (charUUID == PELOTON_DATA_UUID) lastTime = millis();
 
 #ifdef USE_TELEGRAM
   SEND_TO_TELEGRAM(String(logBuf));

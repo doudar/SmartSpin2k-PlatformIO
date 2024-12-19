@@ -86,7 +86,7 @@ class RuntimeParameters {
   void setShifterPosition(int sp) { shifterPosition = sp; }
   int getShifterPosition() { return shifterPosition; }
 
-  void setHomed(int hmd) { homed = hmd; }
+  void setHomed(bool hmd) { homed = hmd; }
   int getHomed() { return homed; }
 
   void setMinStep(int ms) { minStep = ms; }
@@ -123,12 +123,11 @@ class userParameters {
   int stepperSpeed;
   bool stepperDir;
   bool shifterDir;
-  bool udpLogEnabled = false;
-  int32_t hMin = INT32_MIN;
-  int32_t hMax = INT32_MIN;
-  int32_t totalTravel; 
-
+  bool udpLogEnabled         = false;
+  int32_t hMin               = INT32_MIN;
+  int32_t hMax               = INT32_MIN;
   bool FTMSControlPointWrite = false;
+  int homingSensitivity      = DEFAULT_HOMING_SENSITIVITY;  // Use default from settings.h
   String ssid;
   String password;
   String connectedPowerMeter   = CONNECTED_POWER_METER;
@@ -211,6 +210,9 @@ class userParameters {
 
   void setHMax(int32_t max) { hMax = max; }
   int32_t getHMax() { return hMax; }
+
+  void setHomingSensitivity(int sensitivity) { homingSensitivity = sensitivity; }
+  int getHomingSensitivity() { return homingSensitivity; }
 
   void setDefaults();
   String returnJSON();

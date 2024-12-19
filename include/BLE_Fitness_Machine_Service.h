@@ -15,7 +15,7 @@ class BLE_Fitness_Machine_Service {
   BLE_Fitness_Machine_Service();
   void setupService(NimBLEServer *pServer, MyCallbacks *chrCallbacks);
   void update();
-  bool spinDown();
+  bool spinDown(uint8_t response);
 
  private:
   BLEService *pFitnessMachineService;

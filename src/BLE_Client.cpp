@@ -107,9 +107,10 @@ void bleClientTask(void *pvParameters) {
       }
     }
     // Spin Down process for the Server. It's here because it needs to be non-blocking for the maintenance loop.
-    if (spinBLEServer.spinDownFlag) {
+    // Checking for cadence also so that we don't home when nobody is around. 
+    if (spinBLEServer.spinDownFlag && rtConfig->cad.getValue()) {
       if (spinBLEServer.spinDownFlag >= 2) {  // Home Both Directions
-        fitnessMachineService.spinDown();
+        ss2k->goHome(true);
       } else {  // Startup Homing 
         ss2k->goHome(false);
       }
