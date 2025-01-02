@@ -60,7 +60,7 @@ void SS2K::stopTasks() {
   SS2K_LOG(BLE_CLIENT_LOG_TAG, "Shutting Down all BLE services");
   spinBLEClient.reconnectTries        = 0;
   spinBLEClient.intentionalDisconnect = NUM_BLE_DEVICES;
-  if (NimBLEDevice::getInitialized()) {
+  if (NimBLEDevice::isInitialized()) {
     NimBLEDevice::deinit();
     ss2k->stopTasks();
   }

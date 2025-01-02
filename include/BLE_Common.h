@@ -98,6 +98,7 @@ void bleClientTask(void *pvParameters);
 // FLYWHEEL_UART_TX_UUID};
 
 typedef struct NotifyData {
+  NimBLEUUID charUUID;
   uint8_t data[25];
   size_t length;
 } NotifyData;
@@ -136,7 +137,7 @@ class SpinBLEAdvertisedDevice {
   void set(BLEAdvertisedDevice *device, int id = BLE_HS_CONN_HANDLE_NONE, BLEUUID inServiceUUID = (uint16_t)0x0000, BLEUUID inCharUUID = (uint16_t)0x0000);
   void reset();
   void print();
-  bool enqueueData(uint8_t data[25], size_t length);
+  bool enqueueData(uint8_t data[25], size_t length, NimBLEUUID charUUID);
   NotifyData dequeueData();
 };
 
@@ -183,10 +184,10 @@ class SpinBLEClient {
   // Disconnects all devices. They will then be reconnected if scanned and preferred again.
   void reconnectAllDevices();
 
-  String adevName2UniqueName(NimBLEAdvertisedDevice *inDev);
+  String adevName2UniqueName(const NimBLEAdvertisedDevice *inDev);
 };
 
-class MyAdvertisedDeviceCallback : public NimBLEAdvertisedDeviceCallbacks {
+class ScanCallbacks : public NimBLEScanCallbacks {
  public:
   void onResult(NimBLEAdvertisedDevice *);
 };

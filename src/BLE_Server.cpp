@@ -62,7 +62,7 @@ void startBLEServer() {
   pAdvertising->addServiceUUID(WATTBIKE_SERVICE_UUID);
   pAdvertising->setMaxInterval(250);
   pAdvertising->setMinInterval(160);
-  pAdvertising->setScanResponse(true);
+  pAdvertising->enableScanResponse(true);
 
   BLEFirmwareSetup();
   BLEDevice::startAdvertising();

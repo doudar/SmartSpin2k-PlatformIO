@@ -26,7 +26,7 @@ TaskHandle_t BLEClientTask;
 SpinBLEClient spinBLEClient;
 
 static MyClientCallback myClientCallback;
-static MyAdvertisedDeviceCallback myAdvertisedDeviceCallbacks;
+static ScanCallbacks myScanCallbacks;
 
 void SpinBLEClient::start() {
   // Create the task for the BLE Client loop
@@ -53,8 +53,8 @@ static void onNotify(BLERemoteCharacteristic *pBLERemoteCharacteristic, uint8_t 
 
   // enqueue sensor data
   for (size_t i = 0; i < NUM_BLE_DEVICES; i++) {
-    if (pBLERemoteCharacteristic->getUUID() == spinBLEClient.myBLEDevices[i].charUUID) {
-      spinBLEClient.myBLEDevices[i].enqueueData(pData, length);
+    if (pBLERemoteCharacteristic->getClient()->getPeerAddress() == spinBLEClient.myBLEDevices[i].peerAddress) {
+      spinBLEClient.myBLEDevices[i].enqueueData(pData, length, pBLERemoteCharacteristic->getUUID());
     }
   }
 }
@@ -107,11 +107,11 @@ void bleClientTask(void *pvParameters) {
       }
     }
     // Spin Down process for the Server. It's here because it needs to be non-blocking for the maintenance loop.
-    // Checking for cadence also so that we don't home when nobody is around. 
+    // Checking for cadence also so that we don't home when nobody is around.
     if (spinBLEServer.spinDownFlag && rtConfig->cad.getValue()) {
       if (spinBLEServer.spinDownFlag >= 2) {  // Home Both Directions
         ss2k->goHome(true);
-      } else {  // Startup Homing 
+      } else {  // Startup Homing
         ss2k->goHome(false);
       }
       spinBLEServer.spinDownFlag = 0;
@@ -199,7 +199,7 @@ bool SpinBLEClient::connectToServer() {
   NimBLEClient *pClient = nullptr;
 
   /** Check if we have a client we should reuse first **/
-  if (NimBLEDevice::getClientListSize()) {
+  if (NimBLEDevice::getCreatedClientCount()) {
     /** Special case when we already know this device, we send false as the
      *  second argument in connect() to prevent refreshing the service database.
      *  This saves considerable time and power.
@@ -233,7 +233,7 @@ bool SpinBLEClient::connectToServer() {
 
   /** No client to reuse? Create a new one. */
   if (!pClient) {
-    if (NimBLEDevice::getClientListSize() >= NIMBLE_MAX_CONNECTIONS) {
+    if (NimBLEDevice::getCreatedClientCount() >= NIMBLE_MAX_CONNECTIONS) {
       Serial.println("Max clients reached - no more connections available");
       return false;
     }
@@ -278,7 +278,7 @@ bool SpinBLEClient::connectToServer() {
     SS2K_LOG(BLE_CLIENT_LOG_TAG, "Successful remote subscription.");
     spinBLEClient.myBLEDevices[device_number].doConnect = false;
     this->reconnectTries                                = MAX_RECONNECT_TRIES;
-    spinBLEClient.myBLEDevices[device_number].set(myDevice, pClient->getConnId(), serviceUUID, charUUID);
+    spinBLEClient.myBLEDevices[device_number].set(myDevice, pClient->getConnHandle(), serviceUUID, charUUID);
     spinBLEClient.myBLEDevices[device_number].peerAddress = pClient->getPeerAddress();
     removeDuplicates(pClient);
     return true;
@@ -330,7 +330,7 @@ bool SpinBLEClient::connectToServer() {
       SS2K_LOG(BLE_CLIENT_LOG_TAG, "Successful %s subscription.", pChr->getUUID().toString().c_str());
       spinBLEClient.myBLEDevices[device_number].doConnect = false;
       this->reconnectTries                                = MAX_RECONNECT_TRIES;
-      spinBLEClient.myBLEDevices[device_number].set(myDevice, pClient->getConnId(), serviceUUID, charUUID);
+      spinBLEClient.myBLEDevices[device_number].set(myDevice, pClient->getConnHandle(), serviceUUID, charUUID);
       spinBLEClient.myBLEDevices[device_number].peerAddress = pClient->getPeerAddress();
       removeDuplicates(pClient);
     }
@@ -401,7 +401,7 @@ void MyClientCallback::onAuthenticationComplete(ble_gap_conn_desc desc) { SS2K_L
  * Scan for BLE servers and find the first one that advertises the service we are looking for.
  */
 
-void MyAdvertisedDeviceCallback::onResult(BLEAdvertisedDevice *advertisedDevice) {
+void ScanCallbacks::onResult(BLEAdvertisedDevice *advertisedDevice) {
   // Define granular constants for maximal reuse during logging
   const char *const MATCHED               = "Matched ";
   const char *const DIDNT_MATCH_THE_SAVED = " didn't match the saved: ";
@@ -483,18 +483,16 @@ void SpinBLEClient::scanProcess(int duration) {
   BLEScan *pBLEScan = BLEDevice::getScan();
   pBLEScan->stop();
   vTaskDelay(50 / portTICK_PERIOD_MS);
-  pBLEScan->clearDuplicateCache();
   pBLEScan->clearResults();
-  pBLEScan->setAdvertisedDeviceCallbacks(&myAdvertisedDeviceCallbacks);
+  pBLEScan->setScanCallbacks(&myScanCallbacks);
   pBLEScan->setInterval(49);  // 97
   pBLEScan->setWindow(33);    // 67
   pBLEScan->setDuplicateFilter(true);
   pBLEScan->setActiveScan(true);  // might cause memory leak if true - undetermined. We don't get device names without it.
-  BLEScanResults foundDevices = pBLEScan->start(duration, false);
-  this->dontBlockScan         = false;
+  pBLEScan->start(duration, false);
+  this->dontBlockScan = false;
 
-  int count = foundDevices.getCount();
-
+  int count = pBLEScan->getResults().getCount();
   StaticJsonDocument<1000> devices;
 
   // Check if 'devices' JSON document already exists and has content; if so, deserialize it.
@@ -504,32 +502,32 @@ void SpinBLEClient::scanProcess(int duration) {
   }
 
   for (int i = 0; i < count; i++) {
-    BLEAdvertisedDevice d = foundDevices.getDevice(i);
+    const NimBLEAdvertisedDevice* d = pBLEScan->getResults().getDevice(i);
 
     // Check for duplicates by name or address before adding
     bool isDuplicate = false;
     for (JsonPair kv : devices.as<JsonObject>()) {
       JsonObject obj = kv.value().as<JsonObject>();
-      if (obj.containsKey("name") && obj["name"] == this->adevName2UniqueName(&d)) {
+      if (obj.containsKey("name") && obj["name"] == this->adevName2UniqueName(d)) {
         isDuplicate = true;
         break;
       }
     }
 
     // is this device advertising something we're interested in?
-    if (!isDuplicate && (d.isAdvertisingService(CYCLINGPOWERSERVICE_UUID) || d.isAdvertisingService(HEARTSERVICE_UUID) || d.isAdvertisingService(FLYWHEEL_UART_SERVICE_UUID) ||
-                         d.isAdvertisingService(FITNESSMACHINESERVICE_UUID) || d.isAdvertisingService(ECHELON_DEVICE_UUID) || d.isAdvertisingService(HID_SERVICE_UUID))) {
+    if (!isDuplicate && (d->isAdvertisingService(CYCLINGPOWERSERVICE_UUID) || d->isAdvertisingService(HEARTSERVICE_UUID) || d->isAdvertisingService(FLYWHEEL_UART_SERVICE_UUID) ||
+                         d->isAdvertisingService(FITNESSMACHINESERVICE_UUID) || d->isAdvertisingService(ECHELON_DEVICE_UUID) || d->isAdvertisingService(HID_SERVICE_UUID))) {
       String device = "device " + String(devices.size());  // Use the current size to index the new device
 
-      devices[device]["name"] = this->adevName2UniqueName(&d);
+      devices[device]["name"] = this->adevName2UniqueName(d);
 
       // Workaround for IC4 not advertising FTMS as the first service.
       // Potentially others may need to be added in the future.
       // The symptom was the bike name not showing up in the HTML.
-      if (d.haveServiceUUID() && d.isAdvertisingService(FITNESSMACHINESERVICE_UUID)) {
+      if (d->haveServiceUUID() && d->isAdvertisingService(FITNESSMACHINESERVICE_UUID)) {
         devices[device]["UUID"] = FITNESSMACHINESERVICE_UUID.toString();
       } else {
-        devices[device]["UUID"] = d.getServiceUUID().toString();
+        devices[device]["UUID"] = d->getServiceUUID().toString();
       }
     }
   }
@@ -661,7 +659,7 @@ void SpinBLEClient::postConnect() {
           }
           writeCharacteristic->writeValue(FitnessMachineControlPointProcedure::StartOrResume, 1);
           SS2K_LOG(BLE_CLIENT_LOG_TAG, "Updating Connection Params for: %s", _BLEd.peerAddress.toString().c_str());
-          BLEDevice::getServer()->updateConnParams(pClient->getConnId(), 120, 120, 2, 1000);
+          BLEDevice::getServer()->updateConnParams(pClient->getConnHandle(), 120, 120, 2, 1000);
           spinBLEClient.handleBattInfo(pClient, true);
         }
       }
@@ -669,7 +667,7 @@ void SpinBLEClient::postConnect() {
   }
 }
 
-bool SpinBLEAdvertisedDevice::enqueueData(uint8_t *data, size_t length) {
+bool SpinBLEAdvertisedDevice::enqueueData(uint8_t *data, size_t length, NimBLEUUID charUUID) {
   NotifyData notifyData;
 
   if (!uxQueueSpacesAvailable(this->dataBufferQueue)) {
@@ -677,7 +675,8 @@ bool SpinBLEAdvertisedDevice::enqueueData(uint8_t *data, size_t length) {
     return pdFALSE;
   }
 
-  notifyData.length = length;
+  notifyData.length   = length;
+  notifyData.charUUID = charUUID;
   for (size_t i = 0; i < length; i++) {
     notifyData.data[i] = data[i];
     // Serial.printf("%02x ", notifyData.data[i]);
@@ -756,9 +755,8 @@ void SpinBLEClient::connectBLE_HID(NimBLEClient *pClient) {
     // One real device reports 2 with the same UUID but
     // different handles. Using getCharacteristic() results
     // in subscribing to only one.
-    std::vector<NimBLERemoteCharacteristic *> *charVector;
-    charVector = pSvc->getCharacteristics(true);
-    for (auto &it : *charVector) {
+    std::vector<NimBLERemoteCharacteristic *> charVector = pSvc->getCharacteristics(true);
+    for (auto &it : charVector) {
       if (it->getUUID() == NimBLEUUID(HID_REPORT_DATA_UUID)) {
         Serial.println(it->toString().c_str());
         if (it->canNotify()) {
@@ -853,7 +851,7 @@ void SpinBLEClient::handleBattInfo(NimBLEClient *pClient, bool updateNow = false
   }
 }
 // Returns a device name with the las two of the peer address attached. This lets us distinguish between multiple devices with the same device name.
-String SpinBLEClient::adevName2UniqueName(NimBLEAdvertisedDevice *inDev) {
+String SpinBLEClient::adevName2UniqueName(const NimBLEAdvertisedDevice *inDev) {
   if (inDev->haveName()) {
     String _outDevName = String(inDev->getName().c_str());
     // add the last two of the string
