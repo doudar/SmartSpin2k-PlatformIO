@@ -10,7 +10,7 @@
 
 BLE_Heart_Service::BLE_Heart_Service() : pHeartService(nullptr), heartRateMeasurementCharacteristic(nullptr) {}
 
-void BLE_Heart_Service::setupService(NimBLEServer *pServer, MyCallbacks *chrCallbacks) {
+void BLE_Heart_Service::setupService(NimBLEServer *pServer, MyCharacteristicCallbacks *chrCallbacks) {
   // HEART RATE MONITOR SERVICE SETUP
   pHeartService                      = spinBLEServer.pServer->createService(HEARTSERVICE_UUID);
   heartRateMeasurementCharacteristic = pHeartService->createCharacteristic(HEARTCHARACTERISTIC_UUID, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);

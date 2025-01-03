@@ -21,7 +21,7 @@ BLE_Fitness_Machine_Service::BLE_Fitness_Machine_Service()
 
 uint8_t ftmsTrainingStatus[2] = {0x08, 0x00};
 
-void BLE_Fitness_Machine_Service::setupService(NimBLEServer *pServer, MyCallbacks *chrCallbacks) {
+void BLE_Fitness_Machine_Service::setupService(NimBLEServer *pServer, MyCharacteristicCallbacks *chrCallbacks) {
   // Resistance, IPower, HeartRate
   uint8_t ftmsResistanceLevelRange[6] = {0x01, 0x00, 0x64, 0x00, 0x01, 0x00};  // 1:100 increment 1
   uint8_t ftmsPowerRange[6]           = {0x01, 0x00, 0xA0, 0x0F, 0x01, 0x00};  // 1:4000 watts increment 1

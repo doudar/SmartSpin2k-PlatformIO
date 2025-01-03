@@ -37,6 +37,13 @@ void SpinBLEClient::start() {
                           1,                /* priority of the task  */
                           &BLEClientTask,   /* Task handle to keep track of created task */
                           1);               /* pin task to core */
+
+  NimBLEScan *pBLEScan = NimBLEDevice::getScan();
+  pBLEScan->setScanCallbacks(&myScanCallbacks, false);
+  pBLEScan->setInterval(49);  // 97
+  pBLEScan->setWindow(33);    // 67
+  pBLEScan->setDuplicateFilter(true);
+  pBLEScan->setActiveScan(true);
 }
 
 static void onNotify(BLERemoteCharacteristic *pBLERemoteCharacteristic, uint8_t *pData, size_t length, bool isNotify) {
@@ -63,6 +70,7 @@ static void onNotify(BLERemoteCharacteristic *pBLERemoteCharacteristic, uint8_t 
 // Manages device connections and scanning.
 void bleClientTask(void *pvParameters) {
   long int scanDelay = millis();
+  spinBLEClient.checkBLEReconnect();
   for (;;) {
     vTaskDelay(BLE_CLIENT_DELAY / portTICK_PERIOD_MS);  // Delay between loops.
 
@@ -83,7 +91,7 @@ void bleClientTask(void *pvParameters) {
     }
 
     // Scan for BLE devices that we should connect to this client
-    if ((millis() - scanDelay) > ((BLE_RECONNECT_SCAN_DURATION * 1000) * 2)) {
+    if ((millis() - scanDelay) > ((BLE_RECONNECT_SCAN_DURATION) * 2)) {
       spinBLEClient.checkBLEReconnect();
       scanDelay = millis();
 #ifdef DEBUG_STACK
@@ -92,7 +100,7 @@ void bleClientTask(void *pvParameters) {
     }
 
     if (spinBLEClient.doScan && (!ss2k->isUpdating)) {
-      spinBLEClient.scanProcess();
+      spinBLEClient.scanProcess(DEFAULT_SCAN_DURATION);
     }
 
     // Connect BLE Servers to this client
@@ -124,9 +132,9 @@ bool SpinBLEClient::connectToServer() {
   NimBLEUUID serviceUUID;
   NimBLEUUID charUUID;
 
-  int successful                = 0;
-  BLEAdvertisedDevice *myDevice = nullptr;
-  int device_number             = -1;
+  int successful = 0;
+  const NimBLEAdvertisedDevice *myDevice;
+  int device_number = -1;
 
   for (int i = 0; i < NUM_BLE_DEVICES; i++) {
     if (spinBLEClient.myBLEDevices[i].doConnect == true) {   // Client wants to be connected
@@ -250,9 +258,9 @@ bool SpinBLEClient::connectToServer() {
      */
     pClient->setConnectionParams(6, 6, 0, 200);
     /** Set how long we are willing to wait for the connection to complete (seconds), default is 30. */
-    pClient->setConnectTimeout(5);  // 5
+    pClient->setConnectTimeout(5 * 1000);  // 5 seconds
 
-    if (!pClient->connect(myDevice->getAddress())) {
+    if (!pClient->connect(myDevice, false)) {
       SS2K_LOG(BLE_CLIENT_LOG_TAG, " - Failed to connect client");
       /** Created a client but failed to connect, don't need to keep it as it has no data */
       spinBLEClient.myBLEDevices[device_number].reset();
@@ -346,14 +354,12 @@ bool SpinBLEClient::connectToServer() {
 /**  None of these are required as they will be handled by the library with defaults. **
  **                       Remove as you see fit for your needs                        */
 
-void MyClientCallback::onConnect(NimBLEClient *pClient) {
-  // additional characteristic subscriptions.
-}
+void MyClientCallback::onConnect(NimBLEClient *pClient) { SS2K_LOG(BLE_CLIENT_LOG_TAG, "Connected"); }
 
-void MyClientCallback::onDisconnect(NimBLEClient *pClient) {
+void MyClientCallback::onDisconnect(NimBLEClient *pClient, int reason) {
   if (!pClient->isConnected()) {
     NimBLEAddress addr = pClient->getPeerAddress();
-    SS2K_LOG(BLE_CLIENT_LOG_TAG, "This disconnected client Address %s", addr.toString().c_str());
+    SS2K_LOG(BLE_CLIENT_LOG_TAG, "Client %s Disconnected, reason = %d", addr.toString().c_str(), reason);
     for (size_t i = 0; i < NUM_BLE_DEVICES; i++) {
       if (addr == spinBLEClient.myBLEDevices[i].peerAddress) {
         SS2K_LOG(BLE_CLIENT_LOG_TAG, "Detected %s Disconnect", spinBLEClient.myBLEDevices[i].serviceUUID.toString().c_str());
@@ -383,25 +389,34 @@ void MyClientCallback::onDisconnect(NimBLEClient *pClient) {
   }
 }
 
-/***************** New - Security handled here ********************
-****** Note: these are the same return values as defaults ********/
-uint32_t MyClientCallback::onPassKeyRequest() {
-  SS2K_LOG(BLE_CLIENT_LOG_TAG, "Client PassKeyRequest");
-  return 123456;
-}
-bool MyClientCallback::onConfirmPIN(uint32_t pass_key) {
-  SS2K_LOG(BLE_CLIENT_LOG_TAG, "The passkey YES/NO number: %ud", pass_key);
-  return true;
+void MyClientCallback::onPassKeyEntry(NimBLEConnInfo &connInfo) {
+  SS2K_LOG(BLE_CLIENT_LOG_TAG, "Client Passkey Entry");
+  /** This should prompt the user to enter the passkey displayed on the peer device */
+  NimBLEDevice::injectPassKey(connInfo, 123456);
 }
 
-void MyClientCallback::onAuthenticationComplete(ble_gap_conn_desc desc) { SS2K_LOG(BLE_CLIENT_LOG_TAG, "Starting BLE work!"); }
-/*******************************************************************/
+void MyClientCallback::onConfirmPasskey(NimBLEConnInfo &connInfo, uint32_t pass_key) {
+  SS2K_LOG(BLE_CLIENT_LOG_TAG, "The passkey YES/NO number: %" PRIu32, pass_key);
+  /** Inject false if passkeys don't match. */
+  NimBLEDevice::injectConfirmPasskey(connInfo, true);
+}
+
+void MyClientCallback::onAuthenticationComplete(NimBLEConnInfo &connInfo) {
+  if (!connInfo.isEncrypted()) {
+    SS2K_LOG(BLE_CLIENT_LOG_TAG, "Encrypt connection failed - disconnecting");
+    /** Find the client with the connection handle provided in connInfo */
+    NimBLEDevice::getClientByHandle(connInfo.getConnHandle())->disconnect();
+    return;
+  }
+  SS2K_LOG(BLE_CLIENT_LOG_TAG, "Starting BLE work!");
+}
 
 /**
  * Scan for BLE servers and find the first one that advertises the service we are looking for.
  */
 
-void ScanCallbacks::onResult(BLEAdvertisedDevice *advertisedDevice) {
+void ScanCallbacks::onResult(const NimBLEAdvertisedDevice *advertisedDevice) {
+  Serial.printf("Advertised Device found: %s\n", advertisedDevice->toString().c_str());
   // Define granular constants for maximal reuse during logging
   const char *const MATCHED               = "Matched ";
   const char *const DIDNT_MATCH_THE_SAVED = " didn't match the saved: ";
@@ -480,19 +495,17 @@ void SpinBLEClient::scanProcess(int duration) {
 
   SS2K_LOG(BLE_CLIENT_LOG_TAG, "Scanning for BLE servers and putting them into a list...");
 
-  BLEScan *pBLEScan = BLEDevice::getScan();
-  pBLEScan->stop();
-  vTaskDelay(50 / portTICK_PERIOD_MS);
+  NimBLEScan *pBLEScan = NimBLEDevice::getScan();
+  if (pBLEScan->isScanning()) {
+    return;
+  }
   pBLEScan->clearResults();
-  pBLEScan->setScanCallbacks(&myScanCallbacks);
-  pBLEScan->setInterval(49);  // 97
-  pBLEScan->setWindow(33);    // 67
-  pBLEScan->setDuplicateFilter(true);
-  pBLEScan->setActiveScan(true);  // might cause memory leak if true - undetermined. We don't get device names without it.
-  pBLEScan->start(duration, false);
+  pBLEScan->start(duration, false, true);
   this->dontBlockScan = false;
+}
 
-  int count = pBLEScan->getResults().getCount();
+void ScanCallbacks::onScanEnd(const NimBLEScanResults &results, int reason) {
+  int count = results.getCount();
   StaticJsonDocument<1000> devices;
 
   // Check if 'devices' JSON document already exists and has content; if so, deserialize it.
@@ -502,13 +515,13 @@ void SpinBLEClient::scanProcess(int duration) {
   }
 
   for (int i = 0; i < count; i++) {
-    const NimBLEAdvertisedDevice* d = pBLEScan->getResults().getDevice(i);
+    const NimBLEAdvertisedDevice *d = results.getDevice(i);
 
     // Check for duplicates by name or address before adding
     bool isDuplicate = false;
     for (JsonPair kv : devices.as<JsonObject>()) {
       JsonObject obj = kv.value().as<JsonObject>();
-      if (obj.containsKey("name") && obj["name"] == this->adevName2UniqueName(d)) {
+      if (obj.containsKey("name") && obj["name"] == spinBLEClient.adevName2UniqueName(d)) {
         isDuplicate = true;
         break;
       }
@@ -519,7 +532,7 @@ void SpinBLEClient::scanProcess(int duration) {
                          d->isAdvertisingService(FITNESSMACHINESERVICE_UUID) || d->isAdvertisingService(ECHELON_DEVICE_UUID) || d->isAdvertisingService(HID_SERVICE_UUID))) {
       String device = "device " + String(devices.size());  // Use the current size to index the new device
 
-      devices[device]["name"] = this->adevName2UniqueName(d);
+      devices[device]["name"] = spinBLEClient.adevName2UniqueName(d);
 
       // Workaround for IC4 not advertising FTMS as the first service.
       // Potentially others may need to be added in the future.
@@ -534,7 +547,7 @@ void SpinBLEClient::scanProcess(int duration) {
 
   String output;
   serializeJson(devices, output);
-  SS2K_LOG(BLE_CLIENT_LOG_TAG, "Bluetooth Client Found Devices: %s", output.c_str());
+  // SS2K_LOG(BLE_CLIENT_LOG_TAG, "Bluetooth Client Found Devices: %s", output.c_str());
 #ifdef USE_TELEGRAM
   SEND_TO_TELEGRAM("Bluetooth Client Found Devices: " + output);
 #endif
@@ -863,9 +876,9 @@ String SpinBLEClient::adevName2UniqueName(const NimBLEAdvertisedDevice *inDev) {
   }
 }
 
-void SpinBLEAdvertisedDevice::set(BLEAdvertisedDevice *device, int id, BLEUUID inServiceUUID, BLEUUID inCharUUID) {
+void SpinBLEAdvertisedDevice::set(const NimBLEAdvertisedDevice *device, int id, BLEUUID inServiceUUID, BLEUUID inCharUUID) {
   SS2K_LOG(BLE_CLIENT_LOG_TAG, "Setting Device %s", device->getAddress().toString().c_str());
-  this->advertisedDevice  = device;
+  this->advertisedDevice  = const_cast<const NimBLEAdvertisedDevice *>(device);
   this->peerAddress       = device->getAddress();
   this->connectedClientID = id;
   this->serviceUUID       = BLEUUID(inServiceUUID);

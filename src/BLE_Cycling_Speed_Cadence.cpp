@@ -10,7 +10,7 @@
 
 BLE_Cycling_Speed_Cadence::BLE_Cycling_Speed_Cadence() : pCyclingSpeedCadenceService(nullptr), cscMeasurement(nullptr), cscFeature(nullptr) {}
 
-void BLE_Cycling_Speed_Cadence::setupService(NimBLEServer *pServer, MyCallbacks *chrCallbacks) {
+void BLE_Cycling_Speed_Cadence::setupService(NimBLEServer *pServer, MyCharacteristicCallbacks *chrCallbacks) {
   pCyclingSpeedCadenceService = pServer->createService(CSCSERVICE_UUID);
   cscMeasurement              = pCyclingSpeedCadenceService->createCharacteristic(CSCMEASUREMENT_UUID, NIMBLE_PROPERTY::NOTIFY);
   cscFeature                  = pCyclingSpeedCadenceService->createCharacteristic(CSCFEATURE_UUID, NIMBLE_PROPERTY::READ);

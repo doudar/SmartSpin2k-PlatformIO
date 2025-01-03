@@ -25,7 +25,7 @@
 // BLE Server Settings
 SpinBLEServer spinBLEServer;
 
-static MyCallbacks chrCallbacks;
+static MyCharacteristicCallbacks chrCallbacks;
 
 BLE_Cycling_Speed_Cadence cyclingSpeedCadenceService;
 BLE_Cycling_Power_Service cyclingPowerService;
@@ -53,7 +53,7 @@ void startBLEServer() {
   BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
   // const std::string fitnessData = {0b00000001, 0b00100000, 0b00000000};
   // pAdvertising->setServiceData(FITNESSMACHINESERVICE_UUID, fitnessData);
-
+  pAdvertising->setName(userConfig->getDeviceName());
   pAdvertising->addServiceUUID(FITNESSMACHINESERVICE_UUID);
   pAdvertising->addServiceUUID(CYCLINGPOWERSERVICE_UUID);
   pAdvertising->addServiceUUID(CSCSERVICE_UUID);
@@ -127,8 +127,9 @@ void SpinBLEServer::updateWheelAndCrankRev() {
 }
 
 // Creating Server Connection Callbacks
-void MyServerCallbacks::onConnect(BLEServer *pServer, ble_gap_conn_desc *desc) {
-  SS2K_LOG(BLE_SERVER_LOG_TAG, "Bluetooth Remote Client Connected: %s Connected Clients: %d", NimBLEAddress(desc->peer_ota_addr).toString().c_str(), pServer->getConnectedCount());
+void MyServerCallbacks::onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo) {
+  SS2K_LOG(BLE_SERVER_LOG_TAG, "Bluetooth Remote Client Connected: %s Connected Clients: %d",
+           connInfo.getAddress().toString().c_str(), pServer->getConnectedCount());
 
   if (pServer->getConnectedCount() < CONFIG_BT_NIMBLE_MAX_CONNECTIONS - NUM_BLE_DEVICES) {
     BLEDevice::startAdvertising();
@@ -138,7 +139,7 @@ void MyServerCallbacks::onConnect(BLEServer *pServer, ble_gap_conn_desc *desc) {
   }
 }
 
-void MyServerCallbacks::onDisconnect(BLEServer *pServer) {
+void MyServerCallbacks::onDisconnect(NimBLEServer* pServer) {
   SS2K_LOG(BLE_SERVER_LOG_TAG, "Bluetooth Remote Client Disconnected. Remaining Clients: %d", pServer->getConnectedCount());
   BLEDevice::startAdvertising();
   // client disconnected while trying to write fw - reboot to clear the faulty upload.
@@ -148,27 +149,57 @@ void MyServerCallbacks::onDisconnect(BLEServer *pServer) {
   }
 }
 
-bool MyServerCallbacks::onConnParamsUpdateRequest(NimBLEClient *pClient, const ble_gap_upd_params *params) {
-  SS2K_LOG(BLE_SERVER_LOG_TAG, "Updated Server Connection Parameters for %s", pClient->getPeerAddress().toString().c_str());
+void MyServerCallbacks::onMTUChange(uint16_t MTU, NimBLEConnInfo& connInfo) {
+  SS2K_LOG(BLE_SERVER_LOG_TAG, "MTU updated: %u for connection ID: %u", MTU, connInfo.getConnHandle());
+}
+
+uint32_t MyServerCallbacks::onPassKeyDisplay() {
+  uint32_t passkey = 123456; // Static passkey for demonstration
+  SS2K_LOG(BLE_SERVER_LOG_TAG, "Server Passkey Display: %u", passkey);
+  return passkey;
+}
+
+void MyServerCallbacks::onAuthenticationComplete(NimBLEConnInfo& connInfo) {
+  if (!connInfo.isEncrypted()) {
+    SS2K_LOG(BLE_SERVER_LOG_TAG, "Encrypt connection failed - disconnecting client");
+    NimBLEDevice::getServer()->disconnect(connInfo.getConnHandle());
+    return;
+  }
+  SS2K_LOG(BLE_SERVER_LOG_TAG, "Secured connection to: %s", connInfo.getAddress().toString().c_str());
+}
+
+bool MyServerCallbacks::onConnParamsUpdateRequest(uint16_t handle, const ble_gap_upd_params *params) {
+  SS2K_LOG(BLE_SERVER_LOG_TAG, "Updated Server Connection Parameters for handle: %d", handle);
   return true;
-};
+}
 
 // END SERVER CALLBACKS
 
-void MyCallbacks::onWrite(BLECharacteristic *pCharacteristic) {
+void MyCharacteristicCallbacks::onRead(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) {
+  SS2K_LOG(BLE_SERVER_LOG_TAG, "Read from %s by client: %s",
+           pCharacteristic->getUUID().toString().c_str(),
+           connInfo.getAddress().toString().c_str());
+}
+
+void MyCharacteristicCallbacks::onWrite(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) {
   if (pCharacteristic->getUUID() == FITNESSMACHINECONTROLPOINT_UUID) {
     spinBLEServer.writeCache.push(pCharacteristic->getValue());
   } else {
-    SS2K_LOG(BLE_SERVER_LOG_TAG, "Write to %s is not supported", pCharacteristic->getUUID().toString());
+    SS2K_LOG(BLE_SERVER_LOG_TAG, "Write to %s is not supported", pCharacteristic->getUUID().toString().c_str());
   }
 }
 
-void MyCallbacks::onSubscribe(NimBLECharacteristic *pCharacteristic, ble_gap_conn_desc *desc, uint16_t subValue) {
+void MyCharacteristicCallbacks::onStatus(NimBLECharacteristic* pCharacteristic, int code) {
+  SS2K_LOG(BLE_SERVER_LOG_TAG, "Notification/Indication status code: %d for characteristic: %s",
+           code, pCharacteristic->getUUID().toString().c_str());
+}
+
+void MyCharacteristicCallbacks::onSubscribe(NimBLECharacteristic *pCharacteristic, NimBLEConnInfo& connInfo, uint16_t subValue) {
   String str       = "Client ID: ";
   NimBLEUUID pUUID = pCharacteristic->getUUID();
-  str += desc->conn_handle;
+  str += connInfo.getConnHandle();
   str += " Address: ";
-  str += std::string(NimBLEAddress(desc->peer_ota_addr)).c_str();
+  str += connInfo.getAddress().toString().c_str();
   if (subValue == 0) {
     str += " Unsubscribed to ";
     spinBLEServer.setClientSubscribed(pUUID, false);

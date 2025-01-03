@@ -8,6 +8,7 @@
 #pragma once
 
 #include <NimBLEDevice.h>
+#include <NimBLEScan.h>
 #include <memory>
 #include <Arduino.h>
 #include <queue>
@@ -38,9 +39,12 @@ void BLECommunications();
 // *****************************Server****************************
 class MyServerCallbacks : public NimBLEServerCallbacks {
  public:
-  void onConnect(BLEServer *, ble_gap_conn_desc *desc);
-  void onDisconnect(BLEServer *);
-  bool onConnParamsUpdateRequest(NimBLEClient *pClient, const ble_gap_upd_params *params);
+  void onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo);
+  void onDisconnect(NimBLEServer* pServer);
+  void onMTUChange(uint16_t MTU, NimBLEConnInfo& connInfo);
+  uint32_t onPassKeyDisplay();
+  void onAuthenticationComplete(NimBLEConnInfo& connInfo);
+  bool onConnParamsUpdateRequest(uint16_t handle, const ble_gap_upd_params* params);
 };
 
 // TODO add the rest of the server to this class
@@ -66,10 +70,12 @@ class SpinBLEServer {
   SpinBLEServer() { memset(&clientSubscribed, 0, sizeof(clientSubscribed)); }
 };
 
-class MyCallbacks : public NimBLECharacteristicCallbacks {
+class MyCharacteristicCallbacks : public NimBLECharacteristicCallbacks {
  public:
-  void onWrite(BLECharacteristic *);
-  void onSubscribe(NimBLECharacteristic *pCharacteristic, ble_gap_conn_desc *desc, uint16_t subValue);
+  void onWrite(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) override;
+  void onRead(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) override;
+  void onSubscribe(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo, uint16_t subValue) override;
+  void onStatus(NimBLECharacteristic* pCharacteristic, int code) override;
 };
 
 extern SpinBLEServer spinBLEServer;
@@ -120,7 +126,7 @@ class SpinBLEAdvertisedDevice {
   //   }
   // }
 
-  NimBLEAdvertisedDevice *advertisedDevice = nullptr;
+  const NimBLEAdvertisedDevice *advertisedDevice = nullptr;
   NimBLEAddress peerAddress;
 
   int connectedClientID = BLE_HS_CONN_HANDLE_NONE;
@@ -134,7 +140,7 @@ class SpinBLEAdvertisedDevice {
   bool doConnect        = false;
   void setPostConnected(bool pc) { isPostConnected = pc; }
   bool getPostConnected() { return isPostConnected; }
-  void set(BLEAdvertisedDevice *device, int id = BLE_HS_CONN_HANDLE_NONE, BLEUUID inServiceUUID = (uint16_t)0x0000, BLEUUID inCharUUID = (uint16_t)0x0000);
+  void set(const NimBLEAdvertisedDevice *device, int id = BLE_HS_CONN_HANDLE_NONE, BLEUUID inServiceUUID = (uint16_t)0x0000, BLEUUID inCharUUID = (uint16_t)0x0000);
   void reset();
   void print();
   bool enqueueData(uint8_t data[25], size_t length, NimBLEUUID charUUID);
@@ -188,17 +194,19 @@ class SpinBLEClient {
 };
 
 class ScanCallbacks : public NimBLEScanCallbacks {
- public:
-  void onResult(NimBLEAdvertisedDevice *);
+public:
+    void onResult(const NimBLEAdvertisedDevice* advertisedDevice) override;
+    void onScanEnd(const NimBLEScanResults& results, int reason) override;
+private:
 };
 
 class MyClientCallback : public NimBLEClientCallbacks {
  public:
-  void onConnect(BLEClient *);
-  void onDisconnect(BLEClient *);
-  uint32_t onPassKeyRequest();
-  bool onConfirmPIN(uint32_t);
-  void onAuthenticationComplete(ble_gap_conn_desc);
+  void onConnect(NimBLEClient* pClient) override;
+  void onDisconnect(NimBLEClient* pClient, int reason) override;
+  void onPassKeyEntry(NimBLEConnInfo& connInfo) override;
+  void onConfirmPasskey(NimBLEConnInfo& connInfo, uint32_t pass_key) override;
+  void onAuthenticationComplete(NimBLEConnInfo& connInfo) override;
 };
 
 extern SpinBLEClient spinBLEClient;
