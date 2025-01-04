@@ -18,6 +18,7 @@ void BLE_Cycling_Speed_Cadence::setupService(NimBLEServer *pServer, MyCharacteri
   cscFeature->setValue(cscFeatureFlags, sizeof(cscFeatureFlags));
   cscMeasurement->setCallbacks(chrCallbacks);
   pCyclingSpeedCadenceService->start();
+  //spinBLEServer.pServer->getAdvertising()->addServiceUUID(pCyclingSpeedCadenceService->getUUID());
 }
 
 void BLE_Cycling_Speed_Cadence::update() {

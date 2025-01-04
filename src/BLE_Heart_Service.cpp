@@ -18,6 +18,7 @@ void BLE_Heart_Service::setupService(NimBLEServer *pServer, MyCharacteristicCall
   heartRateMeasurementCharacteristic->setValue(heartRateMeasurement, 2);
   heartRateMeasurementCharacteristic->setCallbacks(chrCallbacks);
   pHeartService->start();
+  spinBLEServer.pServer->getAdvertising()->addServiceUUID(pHeartService->getUUID());
 }
 
 void BLE_Heart_Service::update() {

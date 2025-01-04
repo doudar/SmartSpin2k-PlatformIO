@@ -60,6 +60,7 @@ void BLE_Fitness_Machine_Service::setupService(NimBLEServer *pServer, MyCharacte
   fitnessMachineIndoorBikeData->setCallbacks(chrCallbacks);
   fitnessMachineControlPoint->setCallbacks(chrCallbacks);
   pFitnessMachineService->start();
+  spinBLEServer.pServer->getAdvertising()->addServiceUUID(pFitnessMachineService->getUUID());
 }
 
 void BLE_Fitness_Machine_Service::update() {

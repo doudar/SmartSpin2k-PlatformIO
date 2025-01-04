@@ -50,24 +50,18 @@ void startBLEServer() {
   deviceInformationService.setupService(spinBLEServer.pServer);
   wattbikeService.setupService(spinBLEServer.pServer);  // No callback needed
 
-  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+  BLEAdvertising* pAdvertising = BLEDevice::getAdvertising();
   // const std::string fitnessData = {0b00000001, 0b00100000, 0b00000000};
   // pAdvertising->setServiceData(FITNESSMACHINESERVICE_UUID, fitnessData);
-  pAdvertising->setName(userConfig->getDeviceName());
-  pAdvertising->addServiceUUID(FITNESSMACHINESERVICE_UUID);
-  pAdvertising->addServiceUUID(CYCLINGPOWERSERVICE_UUID);
-  pAdvertising->addServiceUUID(CSCSERVICE_UUID);
-  pAdvertising->addServiceUUID(HEARTSERVICE_UUID);
-  pAdvertising->addServiceUUID(SMARTSPIN2K_SERVICE_UUID);
-  pAdvertising->addServiceUUID(WATTBIKE_SERVICE_UUID);
+  pAdvertising->setName(static_cast<const std::__cxx11::string &>(userConfig->getDeviceName()));
   pAdvertising->setMaxInterval(250);
   pAdvertising->setMinInterval(160);
   pAdvertising->enableScanResponse(true);
 
   BLEFirmwareSetup();
-  BLEDevice::startAdvertising();
+  pAdvertising->start();
 
-  SS2K_LOG(BLE_SERVER_LOG_TAG, "Bluetooth Characteristic defined!");
+  SS2K_LOG(BLE_SERVER_LOG_TAG, "Bluetooth Characteristics defined!");
 }
 
 void SpinBLEServer::update() {
