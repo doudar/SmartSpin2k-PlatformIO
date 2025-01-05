@@ -74,12 +74,12 @@ class BLE_ss2kCustomCharacteristic {
   static void parseNemit();
 
  private:
-  BLEService *pSmartSpin2kService;
-  BLECharacteristic *smartSpin2kCharacteristic;
+  NimBLEService *pSmartSpin2kService;
+  NimBLECharacteristic *smartSpin2kCharacteristic;
   uint8_t ss2kCustomCharacteristicValue[3] = {0x00, 0x00, 0x00};
 };
 
-class ss2kCustomCharacteristicCallbacks : public BLECharacteristicCallbacks {
-  void onWrite(BLECharacteristic *);
-  void onSubscribe(NimBLECharacteristic *pCharacteristic, ble_gap_conn_desc *desc, uint16_t subValue);
+class ss2kCustomCharacteristicCallbacks : public NimBLECharacteristicCallbacks {
+  void onWrite(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) override;
+  void onSubscribe(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo, uint16_t subValue) override;
 };

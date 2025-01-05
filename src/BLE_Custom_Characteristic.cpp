@@ -100,12 +100,16 @@ void BLE_ss2kCustomCharacteristic::setupService(NimBLEServer *pServer) {
 
 void BLE_ss2kCustomCharacteristic::update() {}
 
-void ss2kCustomCharacteristicCallbacks::onWrite(BLECharacteristic *pCharacteristic) {
+void ss2kCustomCharacteristicCallbacks::onWrite(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) {
   std::string rxValue = pCharacteristic->getValue();
+  SS2K_LOG(CUSTOM_CHAR_LOG_TAG, "Write from %s", connInfo.getAddress().toString().c_str());
   BLE_ss2kCustomCharacteristic::process(rxValue);
 }
 
-void ss2kCustomCharacteristicCallbacks::onSubscribe(NimBLECharacteristic *pCharacteristic, ble_gap_conn_desc *desc, uint16_t subValue) { NimBLEDevice::setMTU(515); }
+void ss2kCustomCharacteristicCallbacks::onSubscribe(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo, uint16_t subValue) {
+  SS2K_LOG(CUSTOM_CHAR_LOG_TAG, "Subscribe from %s", connInfo.getAddress().toString().c_str());
+  NimBLEDevice::setMTU(515);
+}
 
 void BLE_ss2kCustomCharacteristic::notify(char _item, int tableRow) {
   // regular non power table update

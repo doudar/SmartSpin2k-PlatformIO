@@ -42,6 +42,8 @@ void startBLEServer() {
   spinBLEServer.pServer->setCallbacks(new MyServerCallbacks());
 
   // start services
+  BLEAdvertising* pAdvertising = BLEDevice::getAdvertising();
+  pAdvertising->enableScanResponse(true);
   cyclingSpeedCadenceService.setupService(spinBLEServer.pServer, &chrCallbacks);
   cyclingPowerService.setupService(spinBLEServer.pServer, &chrCallbacks);
   heartService.setupService(spinBLEServer.pServer, &chrCallbacks);
@@ -49,16 +51,14 @@ void startBLEServer() {
   ss2kCustomCharacteristic.setupService(spinBLEServer.pServer);
   deviceInformationService.setupService(spinBLEServer.pServer);
   wattbikeService.setupService(spinBLEServer.pServer);  // No callback needed
-
-  BLEAdvertising* pAdvertising = BLEDevice::getAdvertising();
+  BLEFirmwareSetup();
+  
   // const std::string fitnessData = {0b00000001, 0b00100000, 0b00000000};
   // pAdvertising->setServiceData(FITNESSMACHINESERVICE_UUID, fitnessData);
   pAdvertising->setName(static_cast<const std::__cxx11::string &>(userConfig->getDeviceName()));
   pAdvertising->setMaxInterval(250);
   pAdvertising->setMinInterval(160);
-  pAdvertising->enableScanResponse(true);
 
-  BLEFirmwareSetup();
   pAdvertising->start();
 
   SS2K_LOG(BLE_SERVER_LOG_TAG, "Bluetooth Characteristics defined!");
@@ -184,8 +184,8 @@ void MyCharacteristicCallbacks::onWrite(NimBLECharacteristic* pCharacteristic, N
 }
 
 void MyCharacteristicCallbacks::onStatus(NimBLECharacteristic* pCharacteristic, int code) {
-  SS2K_LOG(BLE_SERVER_LOG_TAG, "Notification/Indication status code: %d for characteristic: %s",
-           code, pCharacteristic->getUUID().toString().c_str());
+  //SS2K_LOG(BLE_SERVER_LOG_TAG, "Notification/Indication status code: %d for characteristic: %s",
+  //         code, pCharacteristic->getUUID().toString().c_str());
 }
 
 void MyCharacteristicCallbacks::onSubscribe(NimBLECharacteristic *pCharacteristic, NimBLEConnInfo& connInfo, uint16_t subValue) {
