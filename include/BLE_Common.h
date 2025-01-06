@@ -26,14 +26,19 @@ struct BLEServiceInfo {
     String name;
 };
 
-inline const std::vector<BLEServiceInfo> SUPPORTED_SERVICES = {
-    {CYCLINGPOWERSERVICE_UUID, CYCLINGPOWERMEASUREMENT_UUID, "Cycling Power Service"},
-    {HEARTSERVICE_UUID, HEARTCHARACTERISTIC_UUID, "Heart Rate Service"},
-    {FITNESSMACHINESERVICE_UUID, FITNESSMACHINEINDOORBIKEDATA_UUID, "Fitness Machine Service"},
-    {HID_SERVICE_UUID, HID_REPORT_DATA_UUID, "HID Service"},
-    {ECHELON_SERVICE_UUID, ECHELON_DATA_UUID, "Echelon Service"},
-    {FLYWHEEL_UART_SERVICE_UUID, FLYWHEEL_UART_TX_UUID, "Flywheel UART Service"}
-};
+namespace BLEServices {
+    const std::vector<BLEServiceInfo> SUPPORTED_SERVICES = {
+        {CYCLINGPOWERSERVICE_UUID, CYCLINGPOWERMEASUREMENT_UUID, "Cycling Power Service"},
+        {CSCSERVICE_UUID, CSCMEASUREMENT_UUID, "Cycling Speed And Cadence Service"},
+        {HEARTSERVICE_UUID, HEARTCHARACTERISTIC_UUID, "Heart Rate Service"},
+        {FITNESSMACHINESERVICE_UUID, FITNESSMACHINEINDOORBIKEDATA_UUID, "Fitness Machine Service"},
+        {HID_SERVICE_UUID, HID_REPORT_DATA_UUID, "HID Service"},
+        {ECHELON_SERVICE_UUID, ECHELON_DATA_UUID, "Echelon Service"},
+        {FLYWHEEL_UART_SERVICE_UUID, FLYWHEEL_UART_TX_UUID, "Flywheel UART Service"}
+    };
+}
+
+using BLEServices::SUPPORTED_SERVICES;
 
 #define BLE_CLIENT_LOG_TAG  "BLE_Client"
 #define BLE_COMMON_LOG_TAG  "BLE_Common"
@@ -54,6 +59,12 @@ void setupBLE();
 extern TaskHandle_t BLEClientTask;
 // ***********************Common**********************************
 void BLECommunications();
+
+// Check if a BLE device supports any of our supported services
+bool isDeviceSupported(const NimBLEAdvertisedDevice* advertisedDevice, const String& deviceName = "");
+
+// Get service info for a supported device
+const BLEServiceInfo* getDeviceServiceInfo(const NimBLEAdvertisedDevice* advertisedDevice, const String& deviceName = "");
 // *****************************Server****************************
 class MyServerCallbacks : public NimBLEServerCallbacks {
  public:

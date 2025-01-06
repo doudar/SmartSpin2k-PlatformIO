@@ -17,6 +17,32 @@
 
 bool hr2p = false;
 
+const BLEServiceInfo* getDeviceServiceInfo(const NimBLEAdvertisedDevice* advertisedDevice, const String& deviceName) {
+    if (!advertisedDevice->haveServiceUUID()) {
+        return nullptr;
+    }
+
+    for (const auto& service : SUPPORTED_SERVICES) {
+        // Special case for Flywheel which requires name check
+        if (service.serviceUUID == FLYWHEEL_UART_SERVICE_UUID) {
+            if (advertisedDevice->isAdvertisingService(service.serviceUUID) && 
+                deviceName == String(FLYWHEEL_BLE_NAME)) {
+                return &service;
+            }
+        }
+        // For all other services
+        else if (advertisedDevice->isAdvertisingService(service.serviceUUID)) {
+            return &service;
+        }
+    }
+    
+    return nullptr;
+}
+
+bool isDeviceSupported(const NimBLEAdvertisedDevice* advertisedDevice, const String& deviceName) {
+    return getDeviceServiceInfo(advertisedDevice, deviceName) != nullptr;
+}
+
 void BLECommunications() {
   static unsigned long int bleCommTimer = millis();
   if (((millis() - bleCommTimer) > BLE_NOTIFY_DELAY) && !ss2k->isUpdating) {
@@ -24,10 +50,10 @@ void BLECommunications() {
     // **********************************Client***************************************
     for (auto &_BLEd : spinBLEClient.myBLEDevices) {  // loop through discovered devices
       if (_BLEd.connectedClientID != BLE_HS_CONN_HANDLE_NONE) {
-        SS2K_LOGW(BLE_COMMON_LOG_TAG, "Address: (%s) Client ID: (%d) SerUUID: (%s) CharUUID: (%s) HRM: (%s) PM: (%s) CSC: (%s) CT: (%s) doConnect: (%s) postConnect: (%s)",
-                  _BLEd.peerAddress.toString().c_str(), _BLEd.connectedClientID, _BLEd.serviceUUID.toString().c_str(), _BLEd.charUUID.toString().c_str(),
-                  _BLEd.isHRM ? "true" : "false", _BLEd.isPM ? "true" : "false", _BLEd.isCSC ? "true" : "false", _BLEd.isCT ? "true" : "false", _BLEd.doConnect ? "true" : "false",
-                  _BLEd.getPostConnected() ? "true" : "false");
+       // SS2K_LOGW(BLE_COMMON_LOG_TAG, "Address: (%s) Client ID: (%d) SerUUID: (%s) CharUUID: (%s) HRM: (%s) PM: (%s) CSC: (%s) CT: (%s) doConnect: (%s) postConnect: (%s)",
+       //           _BLEd.peerAddress.toString().c_str(), _BLEd.connectedClientID, _BLEd.serviceUUID.toString().c_str(), _BLEd.charUUID.toString().c_str(),
+       //           _BLEd.isHRM ? "true" : "false", _BLEd.isPM ? "true" : "false", _BLEd.isCSC ? "true" : "false", _BLEd.isCT ? "true" : "false", _BLEd.doConnect ? "true" : "false",
+       //           _BLEd.getPostConnected() ? "true" : "false");
         if (_BLEd.advertisedDevice) {                                                                // is device registered?
           if ((_BLEd.connectedClientID != BLE_HS_CONN_HANDLE_NONE) && (_BLEd.doConnect == false)) {  // client must not be in connection process
             if (BLEDevice::getClientByPeerAddress(_BLEd.peerAddress)) {                              // nullptr check
