@@ -263,10 +263,8 @@ void SS2K::maintenanceLoop(void *pvParameters) {
       userPWC->saveToLittleFS();
     }
 
-    // Things to do every two seconds
-    if ((millis() - intervalTimer) > 2003) {  // add check here for when to restart WiFi
-                                              // maybe if in STA mode and 8.8.8.8 no ping return?
-      // ss2k->restartWifi();
+    // Things to do every one seconds
+    if ((millis() - intervalTimer) > 1003) {             
       logHandler.writeLogs();
       webSocketAppender.Loop();
       intervalTimer = millis();
