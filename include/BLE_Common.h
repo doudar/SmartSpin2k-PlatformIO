@@ -13,9 +13,27 @@
 #include <Arduino.h>
 #include <queue>
 #include <deque>
+#include <vector>
 #include "Main.h"
 #include "BLE_Definitions.h"
 #include "BLE_Wattbike_Service.h"
+#include "Constants.h"
+
+// Vector of supported BLE services and their corresponding characteristic UUIDs
+struct BLEServiceInfo {
+    BLEUUID serviceUUID;
+    BLEUUID characteristicUUID;
+    String name;
+};
+
+inline const std::vector<BLEServiceInfo> SUPPORTED_SERVICES = {
+    {CYCLINGPOWERSERVICE_UUID, CYCLINGPOWERMEASUREMENT_UUID, "Cycling Power Service"},
+    {HEARTSERVICE_UUID, HEARTCHARACTERISTIC_UUID, "Heart Rate Service"},
+    {FITNESSMACHINESERVICE_UUID, FITNESSMACHINEINDOORBIKEDATA_UUID, "Fitness Machine Service"},
+    {HID_SERVICE_UUID, HID_REPORT_DATA_UUID, "HID Service"},
+    {ECHELON_SERVICE_UUID, ECHELON_DATA_UUID, "Echelon Service"},
+    {FLYWHEEL_UART_SERVICE_UUID, FLYWHEEL_UART_TX_UUID, "Flywheel UART Service"}
+};
 
 #define BLE_CLIENT_LOG_TAG  "BLE_Client"
 #define BLE_COMMON_LOG_TAG  "BLE_Common"
