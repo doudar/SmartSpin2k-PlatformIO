@@ -196,9 +196,6 @@ class userParameters {
   void setShifterDir(bool shd) { shifterDir = shd; }
   bool getShifterDir() { return shifterDir; }
 
-  void setTotalTravel(int tT) { totalTravel = tT; }
-  bool getTotalTravel() { return totalTravel; }
-
   void setUdpLogEnabled(bool enabled) { udpLogEnabled = enabled; }
   bool getUdpLogEnabled() { return udpLogEnabled; }
 

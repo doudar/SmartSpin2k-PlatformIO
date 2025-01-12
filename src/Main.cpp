@@ -647,7 +647,6 @@ void SS2K::goHome(bool bothDirections) {
   if (bothDirections) {
     userConfig->setHMin(rtConfig->getMinStep());
     userConfig->setHMax(rtConfig->getMaxStep());
-    userConfig->setTotalTravel(userConfig->getHMax() - userConfig->getHMin()); 
   }
   // In case this was only one direction homing.
   rtConfig->setMaxStep(userConfig->getHMax());
