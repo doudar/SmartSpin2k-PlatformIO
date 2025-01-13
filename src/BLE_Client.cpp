@@ -646,6 +646,31 @@ void SpinBLEClient::postConnect() {
         }
 
         if ((_BLEd.charUUID == FITNESSMACHINEINDOORBIKEDATA_UUID)) {
+          SS2K_LOG(BLE_CLIENT_LOG_TAG, "Updating Connection Params for: %s", _BLEd.peerAddress.toString().c_str());
+          BLEDevice::getServer()->updateConnParams(pClient->getConnId(), 100, 100, 2, 1000);
+          spinBLEClient.handleBattInfo(pClient, true);
+          
+          auto featuresCharacteristic = pClient->getService(FITNESSMACHINESERVICE_UUID)->getCharacteristic(FITNESSMACHINEFEATURE_UUID);
+          if (featuresCharacteristic == nullptr) {
+            SS2K_LOG(BLE_CLIENT_LOG_TAG, "Failed to find FTMS features characteristic UUID: %s", FITNESSMACHINEFEATURE_UUID.toString().c_str());
+            return;
+          }
+
+          if (featuresCharacteristic->canRead()) {
+            auto value = featuresCharacteristic->readValue();
+            if (value.size() < sizeof(uint64_t)) {
+              SS2K_LOG(BLE_CLIENT_LOG_TAG, "Failed to read FTMS features characteristic");
+              return;
+            }
+
+            // We're only interested in the machine fitness features, not the target setting features.
+            auto features = *reinterpret_cast<const uint32_t *>(value.data());
+            if (!(features & FitnessMachineFeatureFlags::Types::ElapsedTimeSupported) || !(features & FitnessMachineFeatureFlags::Types::RemainingTimeSupported)) {
+              SS2K_LOG(BLE_CLIENT_LOG_TAG, "FTMS Control Point StartOrResume not supported");
+              return;
+            }
+          }
+          
           NimBLERemoteCharacteristic *writeCharacteristic = pClient->getService(FITNESSMACHINESERVICE_UUID)->getCharacteristic(FITNESSMACHINECONTROLPOINT_UUID);
           if (writeCharacteristic == nullptr) {
             SS2K_LOG(BLE_CLIENT_LOG_TAG, "Failed to find FTMS control characteristic UUID: %s", FITNESSMACHINECONTROLPOINT_UUID.toString().c_str());
@@ -660,9 +685,6 @@ void SpinBLEClient::postConnect() {
             SS2K_LOG(BLE_CLIENT_LOG_TAG, "Activated FTMS Training.");
           }
           writeCharacteristic->writeValue(FitnessMachineControlPointProcedure::StartOrResume, 1);
-          SS2K_LOG(BLE_CLIENT_LOG_TAG, "Updating Connection Params for: %s", _BLEd.peerAddress.toString().c_str());
-          BLEDevice::getServer()->updateConnParams(pClient->getConnId(), 120, 120, 2, 1000);
-          spinBLEClient.handleBattInfo(pClient, true);
         }
       }
     }
