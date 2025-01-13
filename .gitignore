@@ -3,6 +3,7 @@
 .vscode/launch.json
 .vscode/ipch
 .vscode/extensions.json
+.idea/
 test/tmp_pio_test_transport.cpp
 data/config.txt
 include/telegram_token.h
@@ -13,3 +14,6 @@ SmartSpin_logfile.txt
 build/CMakeCache.txt
 *.log
 .DS_Store
+.aider*
+.env
+C/Users/

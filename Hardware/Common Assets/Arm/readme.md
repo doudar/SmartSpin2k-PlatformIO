@@ -10,6 +10,7 @@ Bowflex|C7|Any|45
 Bowflex|C6|Any|85
 Bowflex|IC Bike SE|Any|100
 Bowflex|Velocore|150
+Dmasun|Any|Any|55
 Echelon|Connect Sport|Any| 105
 HMC|HMC|Any|60mm
 JLL|IC400|Any|35-45
@@ -20,6 +21,8 @@ Peloton|Bike|Any|75 (90 for slammed bars)
 PooBoo|?|Any|60-80
 Schwinn|IC4|Any|85
 Spinning|L7|Any|20-40 (mount needs to go above SS2k)
+SOLE|SB700|ANY|20-40ra
+Soulcycle|Equinox|Any|155-165
 Stryde|Any|Any|110-120
 Sunny|B1805|Any|35
 Vortec|Vortec|Any|20
