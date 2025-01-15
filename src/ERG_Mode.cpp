@@ -1182,14 +1182,22 @@ void ErgMode::_setPointChangeState(int newCadence, Measurement& newWatts) {
 }
 
 void ErgMode::_inSetpointState(int newCadence, Measurement& newWatts) {
+  // retrieves the current Watt output
   int watts = newWatts.getValue();
 
-  int wattChange  = newWatts.getTarget() - watts;  // setpoint_form_trainer - current_torque => Amount to increase or decrease incline
+  // setpoint_form_trainer - current_torque => Amount to increase or decrease incline
+  int wattChange = newWatts.getTarget() - watts;
+
+  // Calculates how far current power is from the target power, measred as a percentage of target
   float deviation = ((float)wattChange * 100.0) / ((float)newWatts.getTarget());
 
-  float factor     = abs(deviation) > 10 ? userConfig->getERGSensitivity() : userConfig->getERGSensitivity() / 2;
+  // retrieves the sensitivity from adjustments from userConfig
+  float factor = abs(deviation) > 10 ? userConfig->getERGSensitivity() : userConfig->getERGSensitivity() / 2;
+
+  // Adjusts the incline
   float newIncline = ss2k->getCurrentPosition() + (wattChange * factor);
 
+  // passes to apply new cadence, power measurement and incline settings
   _updateValues(newCadence, newWatts, newIncline);
 }
 
