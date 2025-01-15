@@ -1195,9 +1195,9 @@ void ErgMode::_inSetpointState(int newCadence, Measurement& newWatts) {
   float Ki = 0.1;
   float Kd = 0.1;
 
-  // Initialize PID, Neeed to move these to prevent them resetting every loop
-  float integral  = 0.0;
-  float prevError = 0.0;
+  // initialize, may need to double check it's not resetting every time
+  static float integral  = 0.0;
+  static float prevError = 0.0;
 
   // retrieves the current Watt output
   int watts = newWatts.getValue();
@@ -1222,7 +1222,7 @@ void ErgMode::_inSetpointState(int newCadence, Measurement& newWatts) {
   // final PID output
   float PID_output = proportional + integralFinal + derivativeTerm;
 
-  // Calculate the new incline
+  // Calculate new incline
   float newIncline = ss2k->getCurrentPosition() + PID_output;
 
   prevError = error;
