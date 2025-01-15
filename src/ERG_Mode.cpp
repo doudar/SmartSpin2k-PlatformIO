@@ -1181,25 +1181,76 @@ void ErgMode::_setPointChangeState(int newCadence, Measurement& newWatts) {
   ergTimer += (ERG_MODE_DELAY * 2);  // Wait for power meter to register new watts
 }
 
+// INTRODUCING PID CONTROL LOOP
+// Error: Difference between TW and Current W
+
+// Proportional term: Directly Proportional to error
+// Integral term: accumulated sum of errors over time
+// Derivative term: rate of change of error
+
+// PrevError
 void ErgMode::_inSetpointState(int newCadence, Measurement& newWatts) {
+  // Setting Gains For PID Loop
+  float Kp = 0.1;
+  float Ki = 0.1;
+  float Kd = 0.1;
+
+  // Initialize PID, Neeed to move these to prevent them resetting every loop
+  float integral  = 0.0;
+  float prevError = 0.0;
+
   // retrieves the current Watt output
   int watts = newWatts.getValue();
+  // retrieves target Watt output
+  int target = newWatts.getTarget();
+  // subtracting target from current watts
+  float error = target - watts;
 
-  // setpoint_form_trainer - current_torque => Amount to increase or decrease incline
-  int wattChange = newWatts.getTarget() - watts;
+  // Defining proportional term
+  float proportional = Kp * error;
 
-  // Calculates how far current power is from the target power, measred as a percentage of target
-  float deviation = ((float)wattChange * 100.0) / ((float)newWatts.getTarget());
+  // Defining integral term
+  integral += error;
+  float integralFinal = Ki * integral;
 
-  // retrieves the sensitivity from adjustments from userConfig
-  float factor = abs(deviation) > 10 ? userConfig->getERGSensitivity() : userConfig->getERGSensitivity() / 2;
+  // NEED TO GO BACK AND CLAMP DOWN INTEGRAL TO PREVENT IT FROM BEING TOO LARGE
 
-  // Adjusts the incline
-  float newIncline = ss2k->getCurrentPosition() + (wattChange * factor);
+  // Defining derivative term
+  float derivative     = error - prevError;  // Difference between current and previous errors
+  float derivativeTerm = Kd * derivative;
 
-  // passes to apply new cadence, power measurement and incline settings
+  // final PID output
+  float PID_output = proportional + integralFinal + derivativeTerm;
+
+  // Calculate the new incline
+  float newIncline = ss2k->getCurrentPosition() + PID_output;
+
+  prevError = error;
+
+  // Apply the new values
   _updateValues(newCadence, newWatts, newIncline);
 }
+
+// OLD PI FUNCTION
+//  void ErgMode::_inSetpointState(int newCadence, Measurement& newWatts) {
+//    // retrieves the current Watt output
+//    int watts = newWatts.getValue();
+
+//   // setpoint_form_trainer - current_torque => Amount to increase or decrease incline
+//   int wattChange = newWatts.getTarget() - watts;
+
+//   // Calculates how far current power is from the target power, measred as a percentage of target
+//   float deviation = ((float)wattChange * 100.0) / ((float)newWatts.getTarget());
+
+//   // retrieves the sensitivity from adjustments from userConfig
+//   float factor = abs(deviation) > 10 ? userConfig->getERGSensitivity() : userConfig->getERGSensitivity() / 2;
+
+//   // Adjusts the incline
+//   float newIncline = ss2k->getCurrentPosition() + (wattChange * factor);
+
+//   // passes to apply new cadence, power measurement and incline settings
+//   _updateValues(newCadence, newWatts, newIncline);
+// }
 
 void ErgMode::_updateValues(int newCadence, Measurement& newWatts, float newIncline) {
   rtConfig->setTargetIncline(newIncline);
