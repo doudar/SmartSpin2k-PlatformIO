@@ -110,17 +110,32 @@ int PowerBuffer::getReadings() {
 }
 
 void PowerTable::processPowerValue(PowerBuffer& powerBuffer, int cadence, Measurement watts) { //this basically checks the constaraints and if everything is good it adds it into the powerbuffer. no need to change
+  static int calcStep; 
+  
   if ((cadence >= (MINIMUM_TABLE_CAD - (POWERTABLE_CAD_INCREMENT / 2))) &&
       (cadence <= (MINIMUM_TABLE_CAD + (POWERTABLE_CAD_INCREMENT * POWERTABLE_CAD_SIZE) - (POWERTABLE_CAD_SIZE / 2))) && (watts.getValue() > 10) && //adding constraints 
       (watts.getValue() < (POWERTABLE_WATT_SIZE * POWERTABLE_WATT_INCREMENT))) {
+
+        /*if(rtConfig->getMaxStep() == DEFAULT_STEPPER_TRAVEL && rtConfig->getMinStep() == -DEFAULT_STEPPER_TRAVEL){
+                  int totalStep = ((rtConfig->getMaxStep() - rtConfig->getMinStep()) / 10000); //this would get us 4000 if it was the default stepper distance. only if were using a resistance bike
+                  SS2K_LOG(POWERTABLE_LOG_TAG, "totalStep: %d", totalStep); //so it would be 400 
+                  calcStep = totalStep * 0.05; //if it is default stepper position it would be 20 
+                  SS2K_LOG(POWERTABLE_LOG_TAG, "calcStep: %d", calcStep)  // would be 20 
+        }*/
+         if (rtConfig->getHomed()){
+          int totalStep = (rtConfig->getMaxStep() / 100); //maxStep should be around 22000 / 100 gives us 200ish
+          calcStep = totalStep * 0.05; // 5% of that would give us around a 10 range
+        }
+
     if (powerBuffer.powerEntry[0].readings == 0) {
       // Take Initial reading
       powerBuffer.set(0);
-      // Check that reading is within 1/2 of the initial reading
-    } else if ((abs(powerBuffer.powerEntry[0].watts - watts.getValue()) < (POWERTABLE_WATT_INCREMENT / 2)) &&
-               (abs(powerBuffer.powerEntry[0].cad - cadence) < (POWERTABLE_CAD_INCREMENT))) {
+      // Check if the current stepper posistion is within a 5% range of the previous stepper position 
+    } else if (((ss2k->getCurrentPosition()/100) >= (powerBuffer.powerEntry[0].targetPosition - calcStep)) &&
+    ((ss2k->getCurrentPosition()/100) <= (powerBuffer.powerEntry[0].targetPosition + calcStep))) {
       for (int i = 1; i < POWER_SAMPLES; i++) {
         if (powerBuffer.powerEntry[i].readings == 0) {
+          SS2K_LOG(POWERTABLE_LOG_TAG, "Success!"); 
           powerBuffer.set(i);  // Add additional readings to the buffer.
           break;
         }
@@ -505,7 +520,6 @@ void PowerTable::extrapFillTable() {
                     (j - left) * (left > 0 ? this->tableRow[i].tableEntry[left].targetPosition - this->tableRow[i].tableEntry[left - 1].targetPosition : 1);
         if (this->testNeighbors(i, j, tempValue).allNeighborsPassed) {
           this->tableRow[i].tableEntry[j].targetPosition = tempValue;
-          SS2K_LOG(POWERTABLE_LOG_TAG, "Weighted Avg: %f", tempValue);
         }
       }
     } else if (right + 1 < POWERTABLE_WATT_SIZE) {
@@ -516,7 +530,6 @@ void PowerTable::extrapFillTable() {
             (right - j) * (right < POWERTABLE_WATT_SIZE - 1 ? this->tableRow[i].tableEntry[right + 1].targetPosition - this->tableRow[i].tableEntry[right].targetPosition : 1);
         if (this->testNeighbors(i, j, tempValue).allNeighborsPassed) {
           this->tableRow[i].tableEntry[j].targetPosition = tempValue;
-          SS2K_LOG(POWERTABLE_LOG_TAG, "Weighted Avg: %f", tempValue);
         }
       }
     }
@@ -570,7 +583,6 @@ void PowerTable::extrapFillTable() {
                           (j - left) * (left > 0 ? this->tableRow[i].tableEntry[left].targetPosition - this->tableRow[i].tableEntry[left - 1].targetPosition : 1);
               if (this->testNeighbors(i, j, tempValue).allNeighborsPassed) {
                 this->tableRow[i].tableEntry[j].targetPosition = tempValue;
-                SS2K_LOG(POWERTABLE_LOG_TAG, "Weighted Avg: %f", tempValue);
               }
             }
           } else if (right + 1 < POWERTABLE_WATT_SIZE) {
@@ -647,62 +659,66 @@ void PowerTable::extrapFillTable() {
 void PowerTable::extrapolateDiagonal() {
   int tempValue = INT16_MIN;
 
-for (int i = 0; i < POWERTABLE_CAD_SIZE; ++i) {
+  for (int i = 0; i < POWERTABLE_CAD_SIZE; ++i) {
     for (int j = 0; j < POWERTABLE_WATT_SIZE; ++j) {
-        if (this->tableRow[i].tableEntry[j].targetPosition == INT16_MIN) {
-            std::vector<std::pair<int, int>> isNeighbor; 
-            std::vector<int> weights; 
-            int weightSum = 0;  
-
-            //looks at all surrounding cells 
-            for (int row = -1; row <= 1; ++row) { //checks top and bottom
-                for (int col = -1; col <= 1; ++col) { // checks right and left
-                    int rowPosition = i + row; 
-                    int colPosition = j + col;
-
-                    // make sure the vald neighbor is within the range 
-                    if (rowPosition >= 0 && rowPosition < POWERTABLE_CAD_SIZE && colPosition >= 0 && colPosition < POWERTABLE_WATT_SIZE &&  (row != 0 || col != 0) && this->tableRow[rowPosition].tableEntry[colPosition].targetPosition != INT16_MIN) {
-                        
-                        //calculate the weight or distance between the two valid neighbors
-                        int dist = abs(row) + abs(col);
-                        int weight;
-                        if(dist > 0){
-                          weight = 1 / dist; // 1 / dist ratio, smaller the farther it is
-                          SS2K_LOG(POWERTABLE_LOG_TAG, "Weight (distance): %f", weight)
-                        } else {
-                          weight = 1; 
-                          SS2K_LOG(POWERTABLE_LOG_TAG, "No distance.")
-                        }
-
-                        // store the data 
-                        isNeighbor.push_back({rowPosition, colPosition});
-                        weights.push_back(weight);
-                        weightSum += weight;
-                    }
-                }
-            }
-
-            // If we have neightbors we can calculate a weighted average
-            if (!isNeighbor.empty()) {
-                int weightedSum = 0;
-
-                for (size_t i = 0; i < isNeighbor.size(); ++i) {
-                    int x = isNeighbor[i].first;
-                    int y = isNeighbor[i].second;
-                    int neighborValue = this->tableRow[x].tableEntry[y].targetPosition;
-                    weightedSum += neighborValue * weights[i];
-                }
-
-                // get the value to store inside the cell 
-                tempValue = weightedSum / weightSum;
-
-                if (testNeighbors(i, j, tempValue).allNeighborsPassed) {
-                    this->tableRow[i].tableEntry[j].targetPosition = tempValue;
-                    SS2K_LOG(POWERTABLE_LOG_TAG, "Weighted avg: %f", tempValue)
-                }
-            }
+      if (this->tableRow[i].tableEntry[j].targetPosition == INT16_MIN) {
+        // Find nearest top-left non-empty cell
+        int topLeftRow = i - 1, topLeftCol = j - 1;
+        while (topLeftRow >= 0 && topLeftCol >= 0 && this->tableRow[topLeftRow].tableEntry[topLeftCol].targetPosition == INT16_MIN) {
+          topLeftRow--;
+          topLeftCol--;
         }
-     }
+
+        // Find nearest bottom-right non-empty cell
+        int bottomRightRow = i + 1, bottomRightCol = j + 1;
+        while (bottomRightRow < POWERTABLE_CAD_SIZE && bottomRightCol < POWERTABLE_WATT_SIZE &&
+               this->tableRow[bottomRightRow].tableEntry[bottomRightCol].targetPosition == INT16_MIN) {
+          bottomRightRow++;
+          bottomRightCol++;
+        }
+
+        // Perform diagonal extrapolation (top-left to bottom-right)
+        if (topLeftRow >= 0 && topLeftCol >= 0 && bottomRightRow < POWERTABLE_CAD_SIZE && bottomRightCol < POWERTABLE_WATT_SIZE) {
+          tempValue =
+              this->tableRow[topLeftRow].tableEntry[topLeftCol].targetPosition +
+              ((this->tableRow[bottomRightRow].tableEntry[bottomRightCol].targetPosition - this->tableRow[topLeftRow].tableEntry[topLeftCol].targetPosition) * (j - topLeftCol)) /
+                  (bottomRightCol - topLeftCol);
+
+          if (testNeighbors(i, j, tempValue).allNeighborsPassed) {
+            this->tableRow[i].tableEntry[j].targetPosition = tempValue;
+          }
+        }
+
+        // If diagonal top-left to bottom-right is not enough, try top-right to bottom-left
+        if (tempValue == INT16_MIN) {
+          // Find nearest top-right non-empty cell
+          int topRightRow = i - 1, topRightCol = j + 1;
+          while (topRightRow >= 0 && topRightCol < POWERTABLE_WATT_SIZE && this->tableRow[topRightRow].tableEntry[topRightCol].targetPosition == INT16_MIN) {
+            topRightRow--;
+            topRightCol++;
+          }
+
+          // Find nearest bottom-left non-empty cell
+          int bottomLeftRow = i + 1, bottomLeftCol = j - 1;
+          while (bottomLeftRow < POWERTABLE_CAD_SIZE && bottomLeftCol >= 0 && this->tableRow[bottomLeftRow].tableEntry[bottomLeftCol].targetPosition == INT16_MIN) {
+            bottomLeftRow++;
+            bottomLeftCol--;
+          }
+
+          // Perform diagonal extrapolation (top-right to bottom-left)
+          if (topRightRow >= 0 && topRightCol < POWERTABLE_WATT_SIZE && bottomLeftRow < POWERTABLE_CAD_SIZE && bottomLeftCol >= 0) {
+            tempValue = this->tableRow[topRightRow].tableEntry[topRightCol].targetPosition +
+                        ((this->tableRow[bottomLeftRow].tableEntry[bottomLeftCol].targetPosition - this->tableRow[topRightRow].tableEntry[topRightCol].targetPosition) *
+                         (j - bottomLeftCol)) /
+                            (topRightCol - bottomLeftCol);
+
+            if (testNeighbors(i, j, tempValue).allNeighborsPassed) {
+              this->tableRow[i].tableEntry[j].targetPosition = tempValue;
+            }
+          }
+        }
+      }
+    }
   }
 }
 
