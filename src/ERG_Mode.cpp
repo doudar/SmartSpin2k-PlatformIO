@@ -1199,7 +1199,7 @@ void ErgMode::_setPointChangeState(int newCadence, Measurement& newWatts) {
 // PrevError
 void ErgMode::_inSetpointState(int newCadence, Measurement& newWatts) {
   // Setting Gains For PID Loop
-  float Kp = userConfig->getERGSensitivity();
+  float Kp = userConfig->getERGSensitivity()*2;
   float Ki = 0.1;
   float Kd = 0.1;
 
