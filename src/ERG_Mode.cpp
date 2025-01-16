@@ -1134,14 +1134,22 @@ void ErgMode::computeErg() {
     return;
   }
 
-  // SetPoint changed
+#ifdef ERG_MODE_USE_POWER_TABLE
+// SetPoint changed
+#ifdef ERG_MODE_USE_PID
   if (abs(this->setPoint - newWatts.getTarget()) > 20) {
+#endif
     _setPointChangeState(newCadence, newWatts);
     return;
+#ifdef ERG_MODE_USE_PID
   }
+#endif
+#endif
 
+#ifdef ERG_MODE_USE_PID
   // Setpoint unchanged
   _inSetpointState(newCadence, newWatts);
+#endif
 }
 
 void ErgMode::_setPointChangeState(int newCadence, Measurement& newWatts) {
@@ -1191,7 +1199,7 @@ void ErgMode::_setPointChangeState(int newCadence, Measurement& newWatts) {
 // PrevError
 void ErgMode::_inSetpointState(int newCadence, Measurement& newWatts) {
   // Setting Gains For PID Loop
-  float Kp = 0.1;
+  float Kp = userConfig->getERGSensitivity();
   float Ki = 0.1;
   float Kd = 0.1;
 
@@ -1221,6 +1229,13 @@ void ErgMode::_inSetpointState(int newCadence, Measurement& newWatts) {
 
   // final PID output
   float PID_output = proportional + integralFinal + derivativeTerm;
+
+  // log proportional, integral, derivative every five seconds
+  static unsigned long lastTime = 0;
+  if (millis() - lastTime > 5000) {
+    lastTime = millis();
+    SS2K_LOG(ERG_MODE_LOG_TAG, "Proportional: %f, Integral: %f, Derivative: %f", proportional, integralFinal, derivativeTerm);
+  }
 
   // Calculate new incline
   float newIncline = ss2k->getCurrentPosition() + PID_output;
