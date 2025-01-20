@@ -110,29 +110,26 @@ int PowerBuffer::getReadings() {
 }
 
 void PowerTable::processPowerValue(PowerBuffer& powerBuffer, int cadence, Measurement watts) { //this basically checks the constaraints and if everything is good it adds it into the powerbuffer. no need to change
-  static int calcStep; 
-  
+  static int calcStep; //calcStep is the percentage range of the stepper motor 
+
   if ((cadence >= (MINIMUM_TABLE_CAD - (POWERTABLE_CAD_INCREMENT / 2))) &&
       (cadence <= (MINIMUM_TABLE_CAD + (POWERTABLE_CAD_INCREMENT * POWERTABLE_CAD_SIZE) - (POWERTABLE_CAD_SIZE / 2))) && (watts.getValue() > 10) && //adding constraints 
       (watts.getValue() < (POWERTABLE_WATT_SIZE * POWERTABLE_WATT_INCREMENT))) {
 
-        /*if(rtConfig->getMaxStep() == DEFAULT_STEPPER_TRAVEL && rtConfig->getMinStep() == -DEFAULT_STEPPER_TRAVEL){
-                  int totalStep = ((rtConfig->getMaxStep() - rtConfig->getMinStep()) / 10000); //this would get us 4000 if it was the default stepper distance. only if were using a resistance bike
-                  SS2K_LOG(POWERTABLE_LOG_TAG, "totalStep: %d", totalStep); //so it would be 400 
-                  calcStep = totalStep * 0.05; //if it is default stepper position it would be 20 
-                  SS2K_LOG(POWERTABLE_LOG_TAG, "calcStep: %d", calcStep)  // would be 20 
-        }*/
-         if (rtConfig->getHomed()){
+        if(rtConfig->getMaxStep() == DEFAULT_STEPPER_TRAVEL && rtConfig->getMinStep() == 0){
+          int totalStep = ((rtConfig->getMaxStep() / 1000000)); //stepper distance is 400,000,000 so dividing it by 2,000,000 gives us 200
+          calcStep = totalStep * 0.05; // 5% of that would give us around a 10 positive and negative range
+        } else if (rtConfig->getHomed()){
           int totalStep = (rtConfig->getMaxStep() / 100); //maxStep should be around 22000 / 100 gives us 200ish
-          calcStep = totalStep * 0.05; // 5% of that would give us around a 10 range
+          calcStep = totalStep * 0.05; // 5% of that would give us around a 10 positive and negative range
         }
 
-    if (powerBuffer.powerEntry[0].readings == 0) {
+    if (powerBuffer.powerEntry[0].readings == 0) { //we need to make sure stepper position is not negative so it only takes positive resistance values
       // Take Initial reading
       powerBuffer.set(0);
-      // Check if the current stepper posistion is within a 5% range of the previous stepper position 
-    } else if (((ss2k->getCurrentPosition()/100) >= (powerBuffer.powerEntry[0].targetPosition - calcStep)) &&
-    ((ss2k->getCurrentPosition()/100) <= (powerBuffer.powerEntry[0].targetPosition + calcStep))) {
+      // Check if the current stepper posistion is within a 5% range of the previous stepper position and that the current position is not negative
+    } if (((ss2k->getCurrentPosition()/100) >= ((powerBuffer.powerEntry[0].targetPosition) - calcStep)) &&
+    ((ss2k->getCurrentPosition()/100) <= ((powerBuffer.powerEntry[0].targetPosition) + calcStep))) {
       for (int i = 1; i < POWER_SAMPLES; i++) {
         if (powerBuffer.powerEntry[i].readings == 0) {
           SS2K_LOG(POWERTABLE_LOG_TAG, "Success!"); 
@@ -145,8 +142,8 @@ void PowerTable::processPowerValue(PowerBuffer& powerBuffer, int cadence, Measur
         this->toLog();
         this->_manageSaveState();
         powerBuffer.reset();
-      }
-    } else {  // Reading was outside the range - clear the buffer and start over.
+        }
+    }  else {  // Reading was outside the range - clear the buffer and start over.
       powerBuffer.reset();
     }
   }
@@ -464,7 +461,7 @@ void PowerTable::fillTable() {
 
 void PowerTable::extrapFillTable() {
   // Find the center of the known data
-  int sumRow = 0, sumCol = 0, count = 0;
+  /*int sumRow = 0, sumCol = 0, count = 0;
   for (int i = 0; i < POWERTABLE_CAD_SIZE; ++i) {
     for (int j = 0; j < POWERTABLE_WATT_SIZE; ++j) {
       if (this->tableRow[i].tableEntry[j].targetPosition != INT16_MIN) {
@@ -653,11 +650,11 @@ void PowerTable::extrapFillTable() {
         }
       }
     }
-  }
+  }*/
 }
 
 void PowerTable::extrapolateDiagonal() {
-  int tempValue = INT16_MIN;
+  /*int tempValue = INT16_MIN;
 
   for (int i = 0; i < POWERTABLE_CAD_SIZE; ++i) {
     for (int j = 0; j < POWERTABLE_WATT_SIZE; ++j) {
@@ -719,7 +716,7 @@ void PowerTable::extrapolateDiagonal() {
         }
       }
     }
-  }
+  }*/
 }
 
 int PowerTable::getNumEntries() {

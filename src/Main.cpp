@@ -678,7 +678,7 @@ void SS2K::updateStepperSpeed(int speed) {
   if (speed == 0) {
     speed = userConfig->getStepperSpeed();
   }
-  SS2K_LOG(MAIN_LOG_TAG, "StepperSpeed is now %d", speed);
+  //SS2K_LOG(MAIN_LOG_TAG, "StepperSpeed is now %d", speed);
   stepper->setSpeedInHz(speed);
 }
 
