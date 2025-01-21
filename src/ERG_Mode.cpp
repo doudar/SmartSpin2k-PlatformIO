@@ -116,8 +116,8 @@ void PowerTable::processPowerValue(PowerBuffer& powerBuffer, int cadence, Measur
       (cadence <= (MINIMUM_TABLE_CAD + (POWERTABLE_CAD_INCREMENT * POWERTABLE_CAD_SIZE) - (POWERTABLE_CAD_SIZE / 2))) && (watts.getValue() > 10) && //adding constraints 
       (watts.getValue() < (POWERTABLE_WATT_SIZE * POWERTABLE_WATT_INCREMENT))) {
 
-        if(rtConfig->getMaxStep() == DEFAULT_STEPPER_TRAVEL && rtConfig->getMinStep() == 0){
-          int totalStep = ((rtConfig->getMaxStep() / 1000000)); //stepper distance is 400,000,000 so dividing it by 2,000,000 gives us 200
+        if(rtConfig->getMaxStep() == DEFAULT_STEPPER_TRAVEL && rtConfig->getMinStep() == -DEFAULT_STEPPER_TRAVEL){
+          int totalStep = ((rtConfig->getMaxStep() - rtConfig->getMaxStep() / 2000000)); //stepper distance is 400,000,000 so dividing it by 2,000,000 gives us 200
           calcStep = totalStep * 0.05; // 5% of that would give us around a 10 positive and negative range
         } else if (rtConfig->getHomed()){
           int totalStep = (rtConfig->getMaxStep() / 100); //maxStep should be around 22000 / 100 gives us 200ish

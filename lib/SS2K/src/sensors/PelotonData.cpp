@@ -61,8 +61,8 @@ void PelotonData::decode(uint8_t *data, size_t length) {
       break;
 
     case PELOTON_RES_ID:
-      resistance = value;
-      receivedResistance = true;
+      //resistance = value;
+      //receivedResistance = true;
       break;
 
     case PELOTON_RES_ID2:
