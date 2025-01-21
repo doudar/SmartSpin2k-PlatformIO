@@ -461,7 +461,7 @@ void PowerTable::fillTable() {
 
 void PowerTable::extrapFillTable() {
   // Find the center of the known data
-  /*int sumRow = 0, sumCol = 0, count = 0;
+  int sumRow = 0, sumCol = 0, count = 0;
   for (int i = 0; i < POWERTABLE_CAD_SIZE; ++i) {
     for (int j = 0; j < POWERTABLE_WATT_SIZE; ++j) {
       if (this->tableRow[i].tableEntry[j].targetPosition != INT16_MIN) {
@@ -650,11 +650,11 @@ void PowerTable::extrapFillTable() {
         }
       }
     }
-  }*/
+  }
 }
 
 void PowerTable::extrapolateDiagonal() {
-  /*int tempValue = INT16_MIN;
+  int tempValue = INT16_MIN;
 
   for (int i = 0; i < POWERTABLE_CAD_SIZE; ++i) {
     for (int j = 0; j < POWERTABLE_WATT_SIZE; ++j) {
@@ -716,7 +716,7 @@ void PowerTable::extrapolateDiagonal() {
         }
       }
     }
-  }*/
+  }
 }
 
 int PowerTable::getNumEntries() {
