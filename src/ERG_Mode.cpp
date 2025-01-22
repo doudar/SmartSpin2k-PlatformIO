@@ -1191,11 +1191,10 @@ void ErgMode::_setPointChangeState(int newCadence, Measurement& newWatts) {
 // PrevError
 void ErgMode::_inSetpointState(int newCadence, Measurement& newWatts) {
   // Setting Gains For PID Loop
-  float Kp = 0.1;
+  float Kp = userConfig->getERGSensitivity();
   float Ki = 0.1;
   float Kd = 0.1;
 
-  // initialize, may need to double check it's not resetting every time
   static float integral  = 0.0;
   static float prevError = 0.0;
 
@@ -1213,7 +1212,15 @@ void ErgMode::_inSetpointState(int newCadence, Measurement& newWatts) {
   integral += error;
   float integralFinal = Ki * integral;
 
-  // NEED TO GO BACK AND CLAMP DOWN INTEGRAL TO PREVENT IT FROM BEING TOO LARGE
+  // Clamping down integral term
+  float integralMax = 60;
+  float integralMin = -60;
+
+  if (integral > integralMax) {
+    integral = integralMax;
+  } else if (integral < integralMin) {
+    integral = integralMin;
+  }
 
   // Defining derivative term
   float derivative     = error - prevError;  // Difference between current and previous errors
