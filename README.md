@@ -6,23 +6,18 @@
 Find the source code here! -> [SS2kConfigApp](https://github.com/doudar/SS2kConfigApp/tree/develop) 
 
 You can get it from the Apple App Store here:
-
-<div style="display: flex; justify-content: center; flex-wrap: wrap;">
-
-  <div style="flex: 1; min-width: 250px; text-align: center; margin-right: 20px;">
-    <a href="https://apps.apple.com/us/app/smartspin2k-companion-app/id6477836948?itsct=apps_box_badge&amp;itscg=30200">
-      <img src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83&amp;releaseDate=1711584000" alt="Download on the App Store" style="border-radius: 13px; width: 250px; height: 83px; margin-top: 10px;">
-    </a>
-  </div>
-
-  <div style="flex: 1; min-width: 230px; text-align: center;">
-    <img src="https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/8c/f9/c5/8cf9c58e-9471-c012-d974-469f03794167/9b8c3d21-edf7-44d0-a8cc-651944b28ca4_Apple_iPhone_Xs_Max_Screenshot_1.png/230x0w.webp" alt="ss2k banner" style="height: 400px; width: auto;">
-  </div>
-
+<div style="display: flex; flex-wrap: wrap;">
+<a href="https://apps.apple.com/us/app/smartspin2k-companion-app/id6477836948?itscg=30200&itsct=apps_box_badge&mttnsubad=6477836948" style="display: inline-block;">
+<img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us?releaseDate=1711584000" alt="Download on the App Store" style="width: 176px; height: 82px; vertical-align: middle; object-fit: contain;" />
+</a>
 </div>
 
 Or for Android devices: 
-[Companion App on Google Play Store](https://play.google.com/store/apps/details?id=com.smartspin2k.app&pcampaignid=web_share)
+<div style="display: flex; flex-wrap: wrap;">
+<a href="https://play.google.com/store/apps/details?id=com.smartspin2k.app">
+<img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Download on Google Play" style="height: 82px; vertical-align: middle; object-fit: contain;" />
+</a>
+</div>
 
 # About
 SmartSpin2k is a DIY project that allows you to turn any spin bike into a smart trainer. With SmartSpin2k, you can connect your spin bike to Zwift, TrainerRoad, or other popular training apps. This allows you to control your bike's resistance automatically, track your performance, and compete with other riders online.
