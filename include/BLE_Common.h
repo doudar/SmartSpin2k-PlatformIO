@@ -21,21 +21,19 @@
 
 // Vector of supported BLE services and their corresponding characteristic UUIDs
 struct BLEServiceInfo {
-    BLEUUID serviceUUID;
-    BLEUUID characteristicUUID;
-    String name;
+  BLEUUID serviceUUID;
+  BLEUUID characteristicUUID;
+  String name;
 };
 
 namespace BLEServices {
-    const std::vector<BLEServiceInfo> SUPPORTED_SERVICES = {
-        {CYCLINGPOWERSERVICE_UUID, CYCLINGPOWERMEASUREMENT_UUID, "Cycling Power Service"},
-        {CSCSERVICE_UUID, CSCMEASUREMENT_UUID, "Cycling Speed And Cadence Service"},
-        {HEARTSERVICE_UUID, HEARTCHARACTERISTIC_UUID, "Heart Rate Service"},
-        {FITNESSMACHINESERVICE_UUID, FITNESSMACHINEINDOORBIKEDATA_UUID, "Fitness Machine Service"},
-        {HID_SERVICE_UUID, HID_REPORT_DATA_UUID, "HID Service"},
-        {ECHELON_SERVICE_UUID, ECHELON_DATA_UUID, "Echelon Service"},
-        {FLYWHEEL_UART_SERVICE_UUID, FLYWHEEL_UART_TX_UUID, "Flywheel UART Service"}
-    };
+const std::vector<BLEServiceInfo> SUPPORTED_SERVICES = {{CYCLINGPOWERSERVICE_UUID, CYCLINGPOWERMEASUREMENT_UUID, "Cycling Power Service"},
+                                                        {CSCSERVICE_UUID, CSCMEASUREMENT_UUID, "Cycling Speed And Cadence Service"},
+                                                        {HEARTSERVICE_UUID, HEARTCHARACTERISTIC_UUID, "Heart Rate Service"},
+                                                        {FITNESSMACHINESERVICE_UUID, FITNESSMACHINEINDOORBIKEDATA_UUID, "Fitness Machine Service"},
+                                                        {HID_SERVICE_UUID, HID_REPORT_DATA_UUID, "HID Service"},
+                                                        {ECHELON_SERVICE_UUID, ECHELON_DATA_UUID, "Echelon Service"},
+                                                        {FLYWHEEL_UART_SERVICE_UUID, FLYWHEEL_UART_TX_UUID, "Flywheel UART Service"}};
 }
 
 using BLEServices::SUPPORTED_SERVICES;
@@ -88,8 +86,8 @@ class SpinBLEServer {
     bool IndoorBikeData : 1;
     bool CyclingSpeedCadence : 1;
   } clientSubscribed;
-  int spinDownFlag     = 0;
-  NimBLEServer *pServer = nullptr;
+  int spinDownFlag      = 0;
+  NimBLEServer* pServer = nullptr;
   void setClientSubscribed(NimBLEUUID pUUID, bool subscribe);
   void notifyShift();
   double calculateSpeed();
@@ -111,8 +109,8 @@ extern SpinBLEServer spinBLEServer;
 extern BLE_Wattbike_Service wattbikeService;
 
 void startBLEServer();
-void logCharacteristic(char *buffer, const size_t bufferCapacity, const byte *data, const size_t dataLength, const NimBLEUUID serviceUUID, const NimBLEUUID charUUID,
-                       const char *format, ...);
+void logCharacteristic(char* buffer, const size_t bufferCapacity, const byte* data, const size_t dataLength, const NimBLEUUID serviceUUID, const NimBLEUUID charUUID,
+                       const char* format, ...);
 void calculateInstPwrFromHR();
 int connectedClientCount();
 
@@ -123,7 +121,7 @@ void BLEFirmwareSetup();
 
 // Keeping the task outside the class so we don't need a mask.
 // We're only going to run one anyway.
-void bleClientTask(void *pvParameters);
+void bleClientTask(void* pvParameters);
 
 // UUID's the client has methods for
 // BLEUUID serviceUUIDs[4] = {FITNESSMACHINESERVICE_UUID,
@@ -133,6 +131,7 @@ void bleClientTask(void *pvParameters);
 // FLYWHEEL_UART_TX_UUID};
 
 typedef struct NotifyData {
+  NimBLEUUID serviceUUID;
   NimBLEUUID charUUID;
   uint8_t data[25];
   size_t length;
@@ -155,7 +154,7 @@ class SpinBLEAdvertisedDevice {
   //   }
   // }
 
-  const NimBLEAdvertisedDevice *advertisedDevice = nullptr;
+  const NimBLEAdvertisedDevice* advertisedDevice = nullptr;
   NimBLEAddress peerAddress;
 
   int connectedClientID = BLE_HS_CONN_HANDLE_NONE;
@@ -169,10 +168,10 @@ class SpinBLEAdvertisedDevice {
   bool doConnect        = false;
   void setPostConnected(bool pc) { isPostConnected = pc; }
   bool getPostConnected() { return isPostConnected; }
-  void set(const NimBLEAdvertisedDevice *device, int id = BLE_HS_CONN_HANDLE_NONE, BLEUUID inServiceUUID = (uint16_t)0x0000, BLEUUID inCharUUID = (uint16_t)0x0000);
+  void set(const NimBLEAdvertisedDevice* device, int id = BLE_HS_CONN_HANDLE_NONE, BLEUUID inServiceUUID = (uint16_t)0x0000, BLEUUID inCharUUID = (uint16_t)0x0000);
   void reset();
   void print();
-  bool enqueueData(uint8_t data[25], size_t length, NimBLEUUID charUUID);
+  bool enqueueData(uint8_t data[25], size_t length, NimBLEUUID serviceUUID, NimBLEUUID charUUID);
   NotifyData dequeueData();
 };
 
@@ -196,7 +195,7 @@ class SpinBLEClient {
   double cscLastWheelEvtTime     = 0.0;
   int reconnectTries             = MAX_RECONNECT_TRIES;
 
-  BLERemoteCharacteristic *pRemoteCharacteristic = nullptr;
+  BLERemoteCharacteristic* pRemoteCharacteristic = nullptr;
 
   // BLEDevices myBLEDevices;
   SpinBLEAdvertisedDevice myBLEDevices[NUM_BLE_DEVICES];
@@ -206,27 +205,28 @@ class SpinBLEClient {
   bool connectToServer();
   // Check for duplicate services of BLEClient and remove the previously
   // connected one.
-  void removeDuplicates(NimBLEClient *pClient);
-  void resetDevices(NimBLEClient *pClient);
+  void removeDuplicates(NimBLEClient* pClient);
+  void resetDevices(NimBLEClient* pClient);
   void postConnect();
-  void FTMSControlPointWrite(const uint8_t *pData, int length);
-  void connectBLE_HID(NimBLEClient *pClient);
-  void keepAliveBLE_HID(NimBLEClient *pClient);
-  void handleBattInfo(NimBLEClient *pClient, bool updateNow);
+  void FTMSControlPointWrite(const uint8_t* pData, int length);
+  void connectBLE_HID(NimBLEClient* pClient);
+  void keepAliveBLE_HID(NimBLEClient* pClient);
+  void handleBattInfo(NimBLEClient* pClient, bool updateNow);
   // Instead of using this directly, set the .doScan flag to start a scan.
   void scanProcess(int duration = DEFAULT_SCAN_DURATION);
   void checkBLEReconnect();
   // Disconnects all devices. They will then be reconnected if scanned and preferred again.
   void reconnectAllDevices();
 
-  String adevName2UniqueName(const NimBLEAdvertisedDevice *inDev);
+  String adevName2UniqueName(const NimBLEAdvertisedDevice* inDev);
 };
 
 class ScanCallbacks : public NimBLEScanCallbacks {
-public:
-    void onResult(const NimBLEAdvertisedDevice* advertisedDevice) override;
-    void onScanEnd(const NimBLEScanResults& results, int reason) override;
-private:
+ public:
+  void onResult(const NimBLEAdvertisedDevice* advertisedDevice) override;
+  void onScanEnd(const NimBLEScanResults& results, int reason) override;
+
+ private:
 };
 
 class MyClientCallback : public NimBLEClientCallbacks {
