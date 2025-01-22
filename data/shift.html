@@ -1,93 +1,98 @@
 <!DOCTYPE html>
-<html>
-
-
+<html lang="en">
 <head>
-    <style type="text/css">
-        html {
-            background-color: #03245c;
-        }
-    </style>
-    <title>SmartSpin2k Web Server</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SmartSpin2k Web Shifter</title>
+  <style>html{background-color:#03245c}</style>
 </head>
-
 <body>
-    <fieldset>
-        <h1>
-            <div class="watermark" id="loadingWatermark">Loading</div>
-        </h1>
-        <legend><a href="http://github.com/doudar/SmartSpin2k">http://github.com/doudar/SmartSpin2k</a></legend>
-        <p style="text-align: left;"><strong><a href="index.html">Main Index</a></strong></p>
-        <h1>Shift</h1>
+  <div class="page-container">
+    <header>
+      <nav aria-label="Main navigation">
+        <a href="index.html" class="back-link" aria-label="Back to main menu">← Main Menu</a>
+        <a href="http://github.com/doudar/SmartSpin2k" class="github-link">SmartSpin2k</a>
+      </nav>
+    </header>
 
-        <p><span id="shiftUp"></span></p>
-        <p>
-        <div><input type="button" onload="requestConfigValues()" onclick="sendShift(1)" id="shiftUp" value="UP"
-                class="shiftButton"></div>
-        <p></p><input type="button" onload="requestConfigValues()" onclick="sendShift(-1)" id="shiftDown" value="DOWN"
-            class="shiftButton"></p>
-        Current Gear
-        <div><label><input type="text" onload="updateShiftValue(this, true)" value="loading" class=shiftBox
-                    id="shiftBox"> </label></div>
-        <p></p>
-    </fieldset>
-</body>
-<script>
-    var updateTimer = undefined;
+    <main>
+      <div id="loadingWatermark" class="watermark" aria-hidden="true">Loading</div>
+      <h1 class="brand">Web Shifter</h1>
 
+      <div class="shifter-container">
+        <div class="shift-controls">
+          <button type="button" id="shiftUp" onclick="sendShift(1)" class="shift-button shift-up" aria-label="Shift Up">
+            <span class="shift-arrow">▲</span>
+            <span class="shift-label">SHIFT UP</span>
+          </button>
+
+          <div class="gear-display">
+            <label for="shiftBox" class="gear-label">Current Gear</label>
+            <input type="text" id="shiftBox" class="gear-value" value="loading" readonly aria-live="polite">
+          </div>
+
+          <button type="button" id="shiftDown" onclick="sendShift(-1)" class="shift-button shift-down" aria-label="Shift Down">
+            <span class="shift-arrow">▼</span>
+            <span class="shift-label">SHIFT DOWN</span>
+          </button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    let updateTimer;
+    const shiftBox = document.getElementById('shiftBox');
+    
     function sendShift(direction) {
-        var position = parseInt(document.getElementById("shiftBox").value, 10);
-        document.getElementById("shiftBox").value = position + direction;
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", "/shift?value=" + direction, true);
-        xhr.send();
+      const position = parseInt(shiftBox.value, 10);
+      const newPosition = position + direction;
+      
+      // Optimistic UI update
+      shiftBox.value = newPosition;
+      
+      // Visual feedback
+      const button = direction > 0 ? 'shiftUp' : 'shiftDown';
+      const elem = document.getElementById(button);
+      elem.classList.add('active');
+      setTimeout(() => elem.classList.remove('active'), 200);
+
+      // Send request
+      fetch('/shift?value=' + direction, { method: 'GET' })
+        .catch(error => {
+          console.error('Shift error:', error);
+          shiftBox.value = position; // Revert on error
+        });
     }
 
-
     function startUpdate() {
-        //Update values on specified interval loading late because this tiny webserver hates frequent requests
-        if (updateTimer === undefined) {
-            updateTimer = setInterval(function () {
-                requestConfigValues();
-            }, 3000);
-        }
+      if (!updateTimer) {
+        updateTimer = setInterval(requestConfigValues, 3000);
+      }
     }
 
     function requestConfigValues() {
-        var xhttp = new XMLHttpRequest();
-        xhttp.onreadystatechange = function () {
-            if (this.readyState == 4 && this.status == 200) {
-                var obj = JSON.parse(this.responseText);
-                document.getElementById("shiftBox").value = obj.shifterPosition;
-            } else {
-                startUpdate();
-                if (document.getElementById("loadingWatermark")) {
-                    document.getElementById("loadingWatermark").opacity = 0;
-                    document.getElementById("loadingWatermark").remove();
-                }
-            }
-        };
-        xhttp.open("GET", "/runtimeConfigJSON", true);
-        xhttp.send();
+      fetch('/runtimeConfigJSON')
+        .then(response => response.json())
+        .then(data => {
+          shiftBox.value = data.shifterPosition;
+          document.getElementById('loadingWatermark')?.remove();
+        })
+        .catch(() => startUpdate());
     }
 
-    //define function to load css
-    var loadCss = function () {
-        var cssLink = document.createElement('link');
-        cssLink.rel = 'stylesheet';
-        cssLink.href = 'style.css';
-        var head = document.getElementsByTagName('head')[0];
-        head.parentNode.insertBefore(cssLink, head);
-    };
+    function loadCss() {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'style.css';
+      document.head.appendChild(link);
+    }
 
-    //Delay loading css to not swamp webserver
-    window.addEventListener('load', function () {
-        setTimeout(loadCss, 100);
-        setTimeout(requestConfigValues, 500);
-        startUpdate();
-    }, false);
-
-</script>
-
+    window.addEventListener('load', () => {
+      setTimeout(loadCss, 100);
+      setTimeout(requestConfigValues, 500);
+      startUpdate();
+    });
+  </script>
+</body>
 </html>

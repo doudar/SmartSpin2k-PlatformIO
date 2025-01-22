@@ -1,260 +1,270 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-  <style type="text/css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SmartSpin2k Status</title>
+  <style>
     html {
-      background-color: #03245c;
+      background-color: #03245c
     }
   </style>
-  <title>SmartSpin2k Web Server</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 
 <body>
-  <fieldset>
-    <legend><a href="http://github.com/doudar/SmartSpin2k">http://github.com/doudar/SmartSpin2k</a></legend>
-    <p style="text-align: left;"><strong><a href="index.html">Main Index</a></strong></p>
-    <h1 style="text-align: left;"><strong>Status</strong></h1>
-    <h2>
-      <form>
-        <table>
-          <tbody>
-            <tr>
-              <td>
-                <p><label for="ssid">Network SSID</label></p>
-              </td>
-              <td><input type="text" id="ssid" name="ssid" value="loading" /></td>
-              <td>
-                <p><label for="simulatedWatts">Current Watts</label></p>
-              </td>
-              <td><input type="text" id="simulatedWatts" name="simulatedWatts" value="loading" /></td>
-              <td>
-                <p><label for="targetWatts">Target Watts</label></p>
-              </td>
-              <td><input type="text" id="targetWatts" name="targetWatts" value="loading" /></td>
-            </tr>
-            <tr>
-              <td>
-                <p><label for="deviceName">MDNS Name</label></p>
-              </td>
-              <td><input type="text" id="deviceName" name="deviceName" value="loading" /></td>
-              <td>
-                <p><label for="ssid">HR</label></p>
-              </td>
-              <td><input type="text" id="simulatedHr" name="simulatedHr" value="loading" /></td>
-            </tr>
-            <tr>
-              <td>
-                <p><label for="inclineMultiplier">Incline Multiplier</label></p>
-              </td>
-              <td>
-                <input type="text" id="inclineMultiplier" name="inclineMultiplier" value="loading" />
-              </td>
-              <td>
-                <p><label for="ssid">Cadence</label></p>
-              </td>
-              <td><input type="text" id="simulatedCad" name="simulatedCad" value="loading" /></td>
-            </tr>
-            <tr>
-              <td>
-                <p><label for="shiftStep">Shift Step</label></p>
-              </td>
-              <td><input type="text" id="shiftStep" name="shiftStep" value="loading" />
-              </td>
-              <td>
-                <p><label for="ssid">Current Incline</label></p>
-              </td>
-              <td><input type="text" id="currentIncline" name="currentIncline" value="loading" /></td>
-              <td>
-                <p><label for="ssid">Target Incline</label></p>
-              </td>
-              <td><input type="text" id="targetIncline" name="targetIncline" value="loading" /></td>
-            </tr>
-            <tr>
-              <td>
-                <p><label for="connectedHeartMonitor">Connected Heart Monitor</label></p>
-              </td>
-              <td><input type="text" id="connectedHeartMonitor" name="connectedHeartMonitor" value="loading" />
-              </td>
-              <td>
-                <p><label for="ssid">Connected Power Meter</label></p>
-              </td>
-              <td><input type="text" id="connectedPowerMeter" name="ConnectedPowerMeter" value="loading" /></td>
-            </tr>
-          </tbody>
-        </table>
-      </form>
-      <table style="width: 100%;padding: 0;margin: 0;table-layout: fixed;">
-        <tbody>
-          <tr>
-            <td>
-              <p style="text-align: left;float: left;">Debugging Info:</p>
-            </td>
-            <td>
-              <div style="float: right;">
-                <input type="checkbox" id="follow" name="follow" checked="true">
-                <label for="follow">Follow</label>
-              </div>
-            </td>
-          </tr>
-          <tr>
-            <td colspan="2">
-              <pre id="debug" name="debug"
-                style="margin: 0;padding: 5;background-color:black;background-image:radial-gradient(rgba(0,150,0,0.75), black 120%);text-align: left;height:30vh;width:100%;resize:both;border:1px solid #ccc;color:white;font:1.3rem Inconsolata, monospace;overflow:auto;text-shadow: 0 0 4px #C8C8C8;">Loading</pre>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <br>
-    </h2>
-</body>
+  <div class="page-container">
+    <header>
+      <nav aria-label="Main navigation">
+        <a href="index.html" class="back-link" aria-label="Back to main menu">← Main Menu</a>
+        <a href="http://github.com/doudar/SmartSpin2k" class="github-link">SmartSpin2k</a>
+      </nav>
+    </header>
 
-<script>
-  let updatePending = false;
-  let updateTimer = undefined;
-  let lastLogMessageTime = 0;
+    <main>
+      <h1 class="brand">System Status</h1>
 
-  // logging
-  let websocket = undefined;
-  let logEntries = [];
-  const maxLogentries = 1000;
+      <div class="settings-section">
+        <!-- Network Status -->
+        <div class="status-group">
+          <h2>Network Configuration</h2>
+          <div class="status-grid">
+            <div class="status-item">
+              <label for="ssid">Network SSID</label>
+              <input type="text" id="ssid" name="ssid" value="loading" readonly>
+            </div>
+            <div class="status-item">
+              <label for="deviceName">MDNS Name</label>
+              <input type="text" id="deviceName" name="deviceName" value="loading" readonly>
+            </div>
+          </div>
+        </div>
 
-  document.addEventListener("visibilitychange", onVisibilityChanged, false);
-  document.addEventListener("mozvisibilitychange", onVisibilityChanged, false);
-  document.addEventListener("webkitvisibilitychange", onVisibilityChanged, false);
-  document.addEventListener("msvisibilitychange", onVisibilityChanged, false);
+        <!-- Device Status -->
+        <div class="status-group">
+          <h2>Device Status</h2>
+          <div class="status-grid">
+            <div class="status-item">
+              <label for="simulatedWatts">Current Power</label>
+              <input type="text" id="simulatedWatts" name="simulatedWatts" value="loading" readonly>
+            </div>
+            <div class="status-item">
+              <label for="targetWatts">Target Power</label>
+              <input type="text" id="targetWatts" name="targetWatts" value="loading" readonly>
+            </div>
+            <div class="status-item">
+              <label for="simulatedHr">Heart Rate</label>
+              <input type="text" id="simulatedHr" name="simulatedHr" value="loading" readonly>
+            </div>
+            <div class="status-item">
+              <label for="simulatedCad">Cadence</label>
+              <input type="text" id="simulatedCad" name="simulatedCad" value="loading" readonly>
+            </div>
+          </div>
+        </div>
 
-  function onVisibilityChanged() {
-    if (document.hidden || document.mozHidden || document.webkitHidden || document.msHidden) {
-      stopUpdate();
-    } else {
-      startUpdate();
+        <!-- Configuration Status -->
+        <div class="status-group">
+          <h2>Configuration</h2>
+          <div class="status-grid">
+            <div class="status-item">
+              <label for="inclineMultiplier">Incline Multiplier</label>
+              <input type="text" id="inclineMultiplier" name="inclineMultiplier" value="loading" readonly>
+            </div>
+            <div class="status-item">
+              <label for="shiftStep">Shift Step</label>
+              <input type="text" id="shiftStep" name="shiftStep" value="loading" readonly>
+            </div>
+            <div class="status-item">
+              <label for="currentIncline">Current Incline</label>
+              <input type="text" id="currentIncline" name="currentIncline" value="loading" readonly>
+            </div>
+            <div class="status-item">
+              <label for="targetIncline">Target Incline</label>
+              <input type="text" id="targetIncline" name="targetIncline" value="loading" readonly>
+            </div>
+          </div>
+        </div>
+
+        <!-- Connected Devices -->
+        <div class="status-group">
+          <h2>Connected Devices</h2>
+          <div class="status-grid">
+            <div class="status-item">
+              <label for="connectedHeartMonitor">Heart Rate Monitor</label>
+              <input type="text" id="connectedHeartMonitor" name="connectedHeartMonitor" value="loading" readonly>
+            </div>
+            <div class="status-item">
+              <label for="connectedPowerMeter">Power Meter</label>
+              <input type="text" id="connectedPowerMeter" name="ConnectedPowerMeter" value="loading" readonly>
+            </div>
+          </div>
+        </div>
+
+        <!-- Debug Console -->
+        <div class="debug-section">
+          <div class="debug-header">
+            <h2>Debug Console</h2>
+            <label class="follow-toggle">
+              <input type="checkbox" id="follow" name="follow" checked>
+              Auto-scroll
+            </label>
+          </div>
+          <pre id="debug" class="debug-console">Loading</pre>
+          <div class="button-group">
+            <button id="saveLogButton" class="secondary-button">Save Debug Log</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    let updatePending = false;
+    let updateTimer;
+    let lastLogMessageTime = 0;
+    let websocket;
+    let logEntries = [];
+    const maxLogentries = 1000;
+
+    // Visibility change handling
+    document.addEventListener("visibilitychange", onVisibilityChanged);
+    document.addEventListener("mozvisibilitychange", onVisibilityChanged);
+    document.addEventListener("webkitvisibilitychange", onVisibilityChanged);
+    document.addEventListener("msvisibilitychange", onVisibilityChanged);
+
+    function onVisibilityChanged() {
+      if (document.hidden || document.mozHidden || document.webkitHidden || document.msHidden) {
+        stopUpdate();
+      } else {
+        startUpdate();
+      }
     }
-  }
 
-  function startUpdate() {
-    //Update values on specified interval loading late because this tiny webserver hates frequent requests
-    if (updateTimer === undefined) {
-      updateTimer = setInterval(function () {
-        requestRuntimeValues();
-        setupLogging();
-      }, 2500);
+    function startUpdate() {
+      if (!updateTimer) {
+        updateTimer = setInterval(() => {
+          requestRuntimeValues();
+          setupLogging();
+        }, 2500);
+      }
     }
-  }
 
-  function stopUpdate() {
-    clearInterval(updateTimer);
-    updateTimer = undefined;
-  }
-
-  function requestConfigValues() {
-    if (!updatePending) {
-      updatePending = true
-      var xhttp = new XMLHttpRequest();
-      xhttp.onreadystatechange = function () {
-        updatePending = false;
-        if (this.readyState === 4 && this.status === 200) {
-          var obj = JSON.parse(this.responseText);
-          document.getElementById("ssid").value = obj.ssid;
-          document.getElementById("connectedHeartMonitor").value = obj.connectedHeartMonitor;
-          document.getElementById("deviceName").value = obj.deviceName;
-          document.getElementById("shiftStep").value = obj.shiftStep;
-          document.getElementById("inclineMultiplier").value = obj.inclineMultiplier;
-          //--- document.getElementById("ERGSensitivity").value = obj.ERGSensitivity; ---//
-          document.getElementById("connectedPowerMeter").value = obj.connectedPowerMeter;
-        }
-      };
-      xhttp.open("GET", "/configJSON", true);
-      xhttp.send();
+    function stopUpdate() {
+      clearInterval(updateTimer);
+      updateTimer = undefined;
     }
-  }
 
-  function requestRuntimeValues() {
-    if (!updatePending) {
-      updatePending = true
-      var xhttp = new XMLHttpRequest();
-      xhttp.onreadystatechange = function () {
-        updatePending = false;
-        if (this.readyState === 4 /*DONE*/) {
-          if (this.status === 200) {
-            var obj = JSON.parse(this.responseText);
-            document.getElementById("currentIncline").value = obj.currentIncline;
-            document.getElementById("targetIncline").value = obj.targetIncline;
-            document.getElementById("simulatedHr").value = obj.hr;
-            document.getElementById("simulatedWatts").value = obj.watts;
-            document.getElementById("targetWatts").value = obj.targetWatts;
-            document.getElementById("simulatedCad").value = obj.cad;
+    function requestConfigValues() {
+      if (updatePending) return;
+
+      updatePending = true;
+      fetch('/configJSON')
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById("ssid").value = data.ssid;
+          document.getElementById("connectedHeartMonitor").value = data.connectedHeartMonitor;
+          document.getElementById("deviceName").value = data.deviceName;
+          document.getElementById("shiftStep").value = data.shiftStep;
+          document.getElementById("inclineMultiplier").value = data.inclineMultiplier;
+          document.getElementById("connectedPowerMeter").value = data.connectedPowerMeter;
+        })
+        .catch(error => console.error('Error:', error))
+        .finally(() => updatePending = false);
+    }
+
+    function requestRuntimeValues() {
+      if (updatePending) return;
+
+      updatePending = true;
+      fetch('/runtimeConfigJSON')
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById("currentIncline").value = data.currentIncline;
+          document.getElementById("targetIncline").value = data.targetIncline;
+          document.getElementById("simulatedHr").value = data.hr;
+          document.getElementById("simulatedWatts").value = data.watts;
+          document.getElementById("targetWatts").value = data.targetWatts;
+          document.getElementById("simulatedCad").value = data.cad;
+        })
+        .catch(error => console.error('Error:', error))
+        .finally(() => updatePending = false);
+    }
+
+    function setupLogging() {
+      const debugElement = document.getElementById("debug");
+      const followElement = document.getElementById("follow");
+      const wsAddress = `ws://${document.location.host}:8080`;
+
+      try {
+        if (websocket) {
+          if ((Date.now() - lastLogMessageTime) > 60000) {
+            websocket.close();
+            websocket = null;
+          } else {
+            return;
           }
         }
-      };
-      xhttp.open("GET", "/runtimeConfigJSON", true);
-      xhttp.send();
-    }
-  }
 
-  //define function to load css
-  var loadCss = function () {
-    var cssLink = document.createElement('link');
-    cssLink.rel = 'stylesheet';
-    cssLink.href = 'style.css';
-    var head = document.getElementsByTagName('head')[0];
-    head.parentNode.insertBefore(cssLink, head);
-  };
-
-  //Delay loading css to not swamp webserver
-  window.addEventListener('load', function () {
-    setTimeout(loadCss, 100);
-    requestConfigValues();
-    setupLogging();
-    setTimeout(requestRuntimeValues(), 200);
-    startUpdate();
-  }, false);
-
-  function setupLogging() {
-    var debugElement = document.getElementById("debug");
-    var followElement = document.getElementById("follow");
-    var wsAddress = `ws://${document.location.host}:8080`;
-
-    try {
-      if (websocket != null) {
-        if ((Date.now() - lastLogMessageTime) > 60_000) {
-          websocket.close();
-          websocket = null;
-        } else {
-          return;
-        }
-      }
-
-      // Set lastLogMessageTime to give time to connect to server
-      lastLogMessageTime = Date.now();
-      websocket = new WebSocket(wsAddress);
-
-      websocket.onmessage = (evt) => {
         lastLogMessageTime = Date.now();
-        if (evt?.data == null) {
-          return;
-        }
+        websocket = new WebSocket(wsAddress);
 
-        logEntries.push(event.data);
-        if (logEntries.length > maxLogentries) {
-          logEntries = logEntries.slice(1, logEntries.length - 10);
-        }
+        websocket.onmessage = (evt) => {
+          if (!evt?.data) return;
 
-        debugElement.innerHTML = logEntries.join("<br>");
-        if (followElement.checked) {
-          debugElement.scrollTop = debugElement.scrollHeight - debugElement.clientHeight
+          lastLogMessageTime = Date.now();
+          logEntries.push(evt.data);
+
+          if (logEntries.length > maxLogentries) {
+            logEntries = logEntries.slice(1, logEntries.length - 10);
+          }
+
+          debugElement.innerHTML = logEntries.join("<br>");
+
+          if (followElement.checked) {
+            debugElement.scrollTop = debugElement.scrollHeight - debugElement.clientHeight;
+          }
+        };
+      } catch (e) {
+        console.error("Could not connect to Websocket.", e);
+        if (websocket) {
+          websocket.close();
+          websocket = undefined;
         }
       }
-    } catch (e) {
-      console.error("Could not connect to Websocket.", e);
-      if (websocket != null) {
-        websocket.close();
-      }
-      websocket = undefined;
     }
-  }
 
-</script>
+    function loadCss() {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'style.css';
+      document.head.appendChild(link);
+    }
+
+    window.addEventListener('load', () => {
+      setTimeout(loadCss, 100);
+      requestConfigValues();
+      setupLogging();
+      setTimeout(requestRuntimeValues, 200);
+      startUpdate();
+    });
+
+    document.getElementById('saveLogButton').addEventListener('click', () => {
+      const debugElement = document.getElementById('debug');
+      logContent = debugElement.textContent;
+      logContent = logContent.replace(/(\[\s*\d+\])/g, '\n$1');
+      const blob = new Blob([logContent], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'debug_log.txt';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+
+  </script>
+</body>
 
 </html>
