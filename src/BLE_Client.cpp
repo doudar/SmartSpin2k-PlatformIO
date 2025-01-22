@@ -67,14 +67,32 @@ void notifyCB(NimBLERemoteCharacteristic *pBLERemoteCharacteristic, uint8_t *pDa
   }
 }
 
-void testnotifyCB(NimBLERemoteCharacteristic* pRemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify) {
-    std::string str  = (isNotify == true) ? "Notification" : "Indication";
-    str             += " from ";
-    str             += pRemoteCharacteristic->getClient()->getPeerAddress().toString();
-    str             += ": Service = " + pRemoteCharacteristic->getRemoteService()->getUUID().toString();
-    str             += ", Characteristic = " + pRemoteCharacteristic->getUUID().toString();
-    str             += ", Value = " + std::string((char*)pData, length);
-    Serial.printf("%s\n", str.c_str());
+void subscribeToAllNotifications(NimBLEClient* pClient) {
+    if(!pClient || !pClient->isConnected()) {
+        SS2K_LOG(BLE_CLIENT_LOG_TAG, "Client not connected for notifications");
+        return;
+    }
+
+    for(const auto& service : BLEServices::SUPPORTED_SERVICES) {
+        NimBLERemoteService* pSvc = pClient->getService(service.serviceUUID);
+        if(pSvc) {
+            for(const auto& pChr : pSvc->getCharacteristics()) {
+                if(pChr) {
+                    if(pChr->canNotify() || pChr->canIndicate()) {
+                        if(pChr->subscribe(true, notifyCB)) {
+                            SS2K_LOG(BLE_CLIENT_LOG_TAG, "Subscribed to %s %s",
+                                   service.name.c_str(),
+                                   pChr->getUUID().toString().c_str());
+                        } else {
+                            SS2K_LOG(BLE_CLIENT_LOG_TAG, "Failed to subscribe to %s %s",
+                                   service.name.c_str(),
+                                   pChr->getUUID().toString().c_str());
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 // BLE Client loop task.
@@ -284,7 +302,7 @@ bool SpinBLEClient::connectToServer() {
     pChr = pSvc->getCharacteristic(charUUID);
 
     if (pChr) { /** make sure it's not null */
-      if (pChr->canRead()) {
+/*       if (pChr->canRead()) {
         NimBLEAttValue value       = pChr->readValue();
         const int kLogBufMaxLength = 250;
         char logBuf[kLogBufMaxLength];
@@ -293,9 +311,9 @@ bool SpinBLEClient::connectToServer() {
         SS2K_LOG(BLE_COMMON_LOG_TAG, "%s", logBuf);
       }
       if (pChr->canNotify()) {
-        SS2K_LOG(BLE_CLIENT_LOG_TAG, "Setting up notifications for service %s char %s, handle %d", serviceUUID.toString().c_str(), charUUID.toString().c_str(), pChr->getHandle());
-        if (!pChr->subscribe(true, testnotifyCB)) {
-          /** Disconnect if subscribe failed */
+        SS2K_LOG(BLE_CLIENT_LOG_TAG, "Setting up notifications for service %s char %s, handle %d", serviceUUID.toString().c_str(), pChr->getUUID().toString().c_str(), pChr->getHandle());
+        if (!pChr->subscribe(true, notifyCB)) {
+          /** Disconnect if subscribe failed *//*
           SS2K_LOG(BLE_CLIENT_LOG_TAG, "Notifications Failed for %s", pClient->getPeerAddress().toString().c_str());
           spinBLEClient.myBLEDevices[device_number].reset();
           pClient->deleteServices();
@@ -305,10 +323,10 @@ bool SpinBLEClient::connectToServer() {
         }
         SS2K_LOG(BLE_CLIENT_LOG_TAG, "Notifications Subscribed for %s, UUID %s", pClient->getPeerAddress().toString().c_str(), pChr->getUUID().toString().c_str());
       } else if (pChr->canIndicate()) {
-        /** Send false as first argument to subscribe to indications instead of notifications */
+        /** Send false as first argument to subscribe to indications instead of notifications 
         if (!pChr->subscribe(false, notifyCB)) {
           SS2K_LOG(BLE_CLIENT_LOG_TAG, "Indications Failed for %s", pClient->getPeerAddress().toString().c_str());
-          /** Disconnect if subscribe failed */
+          /** Disconnect if subscribe failed 
           spinBLEClient.myBLEDevices[device_number].reset();
           pClient->deleteServices();
           NimBLEDevice::getScan()->erase(pClient->getPeerAddress());
@@ -316,7 +334,8 @@ bool SpinBLEClient::connectToServer() {
           return false;
         }
         SS2K_LOG(BLE_CLIENT_LOG_TAG, "Indications Subscribed for %s", pClient->getPeerAddress().toString().c_str());
-      }
+      } */
+     subscribeToAllNotifications(pClient);
       this->reconnectTries = MAX_RECONNECT_TRIES;
       SS2K_LOG(BLE_CLIENT_LOG_TAG, "Successful %s subscription.", pChr->getUUID().toString().c_str());
       spinBLEClient.myBLEDevices[device_number].doConnect = false;
@@ -615,7 +634,9 @@ void SpinBLEClient::postConnect() {
   for (auto &_BLEd : spinBLEClient.myBLEDevices) {
     // Check that the device has been assigned and it hasn't been post connected.
     if ((_BLEd.connectedClientID != BLE_HS_CONN_HANDLE_NONE) && !_BLEd.getPostConnected()) {
-      SS2K_LOG(BLE_CLIENT_LOG_TAG, "Post connecting: %s , ConnID %d", _BLEd.peerAddress.toString().c_str(), _BLEd.connectedClientID);
+      SS2K_LOG(BLE_CLIENT_LOG_TAG, "Post connecting: %s , ConnID %d, PrimaryChar %s", _BLEd.peerAddress.toString().c_str(), _BLEd.connectedClientID, _BLEd.charUUID.toString().c_str());
+      //auto testCharactreristic = NimBLEDevice::getClientByPeerAddress(_BLEd.peerAddress)->getService(CYCLINGPOWERSERVICE_UUID)->getCharacteristic(CYCLINGPOWERMEASUREMENT_UUID);
+      //testCharactreristic->subscribe(true, notifyCB);
       if (NimBLEDevice::getClientByPeerAddress(_BLEd.peerAddress)) {
         _BLEd.setPostConnected(true);
         NimBLEClient *pClient = NimBLEDevice::getClientByPeerAddress(_BLEd.peerAddress);
@@ -636,7 +657,7 @@ void SpinBLEClient::postConnect() {
 
         if ((_BLEd.charUUID == FITNESSMACHINEINDOORBIKEDATA_UUID)) {
           SS2K_LOG(BLE_CLIENT_LOG_TAG, "Updating Connection Params for: %s", _BLEd.peerAddress.toString().c_str());
-          BLEDevice::getServer()->updateConnParams(pClient->getConnId(), 100, 100, 2, 1000);
+          BLEDevice::getServer()->updateConnParams(pClient->getConnHandle(), 100, 100, 2, 1000);
           spinBLEClient.handleBattInfo(pClient, true);
           
           auto featuresCharacteristic = pClient->getService(FITNESSMACHINESERVICE_UUID)->getCharacteristic(FITNESSMACHINEFEATURE_UUID);
@@ -775,11 +796,11 @@ void SpinBLEClient::connectBLE_HID(NimBLEClient *pClient) {
         if (it->canNotify()) {
           if (!it->subscribe(true, notifyCB)) {
             /** Disconnect if subscribe failed */
-            Serial.println("subscribe notification failed");
+            Serial.println("HID subscribe notification failed");
             NimBLEDevice::deleteClient(pClient);
             return;  // false;
           } else {
-            Serial.println("subscribed");
+            Serial.println("subscribed to HID");
           }
         }
       }
