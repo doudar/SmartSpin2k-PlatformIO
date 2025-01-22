@@ -32,4 +32,5 @@ class CscSensorData : public SensorData {
   uint32_t lastCrankEventTime = 0;
   uint32_t lastWheelRevolutions = 0;
   uint32_t lastCrankRevolutions = 0;
+  uint8_t missedReadingCount = 0;
 };

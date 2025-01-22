@@ -858,7 +858,7 @@ void SpinBLEAdvertisedDevice::set(const NimBLEAdvertisedDevice *device, int id, 
   this->connectedClientID = id;
   this->serviceUUID       = BLEUUID(inServiceUUID);
   this->charUUID          = BLEUUID(inCharUUID);
-  this->dataBufferQueue   = xQueueCreate(4, sizeof(NotifyData));
+  this->dataBufferQueue   = xQueueCreate(6, sizeof(NotifyData));
 
   // Only register services when we have a connected client
   if (id != BLE_HS_CONN_HANDLE_NONE) {

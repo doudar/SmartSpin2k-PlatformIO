@@ -72,15 +72,32 @@ void CscSensorData::decode(uint8_t *data, size_t length) {
     // Calculate cadence if we have previous measurements
     if (lastCrankEventTime > 0) {
       // Handle timer wraparound (16-bit timer)
-      uint16_t timeDiff = (crankEventTime >= lastCrankEventTime) ? 
-                         (crankEventTime - lastCrankEventTime) : 
+      uint16_t timeDiff = (crankEventTime >= lastCrankEventTime) ?
+                         (crankEventTime - lastCrankEventTime) :
                          (65535 - lastCrankEventTime + crankEventTime);
       
       if (timeDiff > 0) {
         // Time is in 1/1024th of a second
         float revolutions = crankRevolutions - lastCrankRevolutions;
         float timeMinutes = (timeDiff / 1024.0f) / 60.0f;
-        this->cadence = revolutions / timeMinutes;
+        float cadence = revolutions / timeMinutes;
+        
+        if (cadence > 1) {
+          if (cadence > 200) {  // Human is unlikely producing 200+ cadence
+            // Cadence Error: Could happen if cadence measurements were missed
+            //                Leave cadence unchanged
+            cadence = this->cadence;
+          }
+          this->cadence = cadence;
+          this->missedReadingCount = 0;
+        } else {
+          this->missedReadingCount++;
+        }
+      } else {                               // the crank rev probably didn't update
+        if (this->missedReadingCount > 2) {  // Require three consecutive readings before setting 0 cadence
+          this->cadence = 0;
+        }
+        this->missedReadingCount++;
       }
     }
 
