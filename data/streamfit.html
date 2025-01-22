@@ -1,34 +1,94 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <link rel="stylesheet" href="style.css">
-    <title>SmartSpin2k Web Server</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SmartSpin2k StreamFit</title>
+  <style>html{background-color:#03245c}</style>
 </head>
-
 <body>
-    <fieldset>
-        <legend><a href="http://github.com/doudar/SmartSpin2k">http://github.com/doudar/SmartSpin2k</a></legend>
-        <p style="text-align: left;"><strong><a href="index.html">Main Index</a></strong></p>
-        <h1 style="text-align: left;"><strong>StreamFit</strong></h1>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+  <div class="page-container">
+    <header>
+      <nav aria-label="Main navigation">
+        <a href="index.html" class="back-link" aria-label="Back to main menu">← Main Menu</a>
+        <a href="http://github.com/doudar/SmartSpin2k" class="github-link">SmartSpin2k</a>
+      </nav>
+    </header>
 
-        <body>
-            <input type="file" id="file-selector" accept=".fit"/>
-            <p></p>
-            <h2>
-                <div id="status">REQUIRES INTERNET CONNECTION</div>
-                <div id="heart_rate"></div>
-                <div id="power"></div>
-                <div id="cadence"></div>
-                <p></p>
-            </h2>
-            <button type="button" id="stopBTN">Stop</button>
-            <p>&zwnj;</p>
-        </body>
-    </fieldset>
-    <script src="https://raw.githack.com/doudar/StreamFit/master/index.js"></script>
-    <!--githack sounds scary but it really isn't. It's just a CDN server that mirrors Github. Check out their about page for more info.-->
+    <main>
+      <h1 class="brand">StreamFit</h1>
 
+      <div class="settings-section">
+        <div class="info-box">
+          <p>Upload a .fit file to simulate a recorded workout.</p>
+          <p class="note">Requires internet connection for file processing.</p>
+        </div>
+
+        <div class="upload-container">
+          <label for="file-selector" class="file-upload">
+            <div class="upload-icon">📂</div>
+            <span>Choose .fit file</span>
+            <input type="file" id="file-selector" accept=".fit" class="file-input"/>
+          </label>
+
+          <div id="status" class="status-message info">REQUIRES INTERNET CONNECTION</div>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-icon">❤️</div>
+            <div class="metric-label">Heart Rate</div>
+            <div id="heart_rate" class="metric-value">--</div>
+            <div class="metric-unit">BPM</div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-icon">⚡</div>
+            <div class="metric-label">Power</div>
+            <div id="power" class="metric-value">--</div>
+            <div class="metric-unit">W</div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-icon">🔄</div>
+            <div class="metric-label">Cadence</div>
+            <div id="cadence" class="metric-value">--</div>
+            <div class="metric-unit">RPM</div>
+          </div>
+        </div>
+
+        <div class="button-container">
+          <button type="button" id="stopBTN" class="warning-button">
+            <span class="button-icon">⏹</span>
+            Stop Simulation
+          </button>
+        </div>
+      </div>
+
+      <footer>
+        <a href="https://github.com/doudar/SmartSpin2k/wiki" class="help-link">Documentation</a>
+      </footer>
+    </main>
+  </div>
+
+  <script src="https://raw.githack.com/doudar/StreamFit/master/index.js"></script>
+  <script>
+    function loadCss() {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'style.css';
+      document.head.appendChild(link);
+    }
+
+    window.addEventListener('load', () => {
+      setTimeout(loadCss, 100);
+      
+      // Update file input label with selected filename
+      document.getElementById('file-selector').addEventListener('change', function(e) {
+        const fileName = e.target.files[0]?.name || 'Choose .fit file';
+        e.target.parentElement.querySelector('span').textContent = fileName;
+      });
+    });
+  </script>
+</body>
 </html>
