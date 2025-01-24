@@ -46,7 +46,7 @@ void SpinBLEClient::start() {
   pBLEScan->setActiveScan(true);
 }
 
-void notifyCB(NimBLERemoteCharacteristic *pBLERemoteCharacteristic, uint8_t *pData, size_t length, bool isNotify) {
+static void notifyCB(NimBLERemoteCharacteristic *pBLERemoteCharacteristic, uint8_t *pData, size_t length, bool isNotify) {
   // Parse BLE shifter info.
   if (pBLERemoteCharacteristic->getRemoteService()->getUUID() == HID_SERVICE_UUID) {
     Serial.print(pData[0], HEX);
@@ -78,8 +78,8 @@ void subscribeToAllNotifications(NimBLEClient *pClient) {
         if (pChr) {
           SS2K_LOG(BLE_CLIENT_LOG_TAG, "Found %s, %s", service.serviceUUID.toString().c_str(), pChr->getUUID().toString().c_str());
           if (pChr->canNotify() || pChr->canIndicate()) {
-            if (pChr->subscribe(true, notifyCB)) {
-              SS2K_LOG(BLE_CLIENT_LOG_TAG, "Subscribed to %s %s", service.name.c_str(), pChr->getUUID().toString().c_str());
+            if (pChr->canNotify() ? pChr->subscribe(true, notifyCB) : pChr->subscribe(false, notifyCB)) {
+              SS2K_LOG(BLE_CLIENT_LOG_TAG, "Subscribed to %s %s handle: %d", service.name.c_str(), pChr->getUUID().toString().c_str(), pChr->getHandle());
             } else {
               SS2K_LOG(BLE_CLIENT_LOG_TAG, "Failed to subscribe to %s %s", service.name.c_str(), pChr->getUUID().toString().c_str());
             }
@@ -209,7 +209,7 @@ bool SpinBLEClient::connectToServer() {
      */
     pClient = NimBLEDevice::getClientByPeerAddress(myDevice->getAddress());
     if (pClient) {
-      pClient->setConnectTimeout(2);
+      pClient->setConnectTimeout(500);
       SS2K_LOG(BLE_CLIENT_LOG_TAG, "Reusing Client");
       if (!pClient->connect(myDevice, false)) {
         SS2K_LOG(BLE_CLIENT_LOG_TAG, "Reconnect failed ");
@@ -251,7 +251,7 @@ bool SpinBLEClient::connectToServer() {
      *  connections. Timeout should be a multiple of the interval, minimum is 100ms.
      *  Min interval: 12 * 1.25ms = 15, Max interval: 12 * 1.25ms = 15, 0 latency, 51 * 10ms = 510ms timeout
      */
-    pClient->setConnectionParams(6, 6, 0, 200);
+    pClient->setConnectionParams(6, 12, 0, 500);
     /** Set how long we are willing to wait for the connection to complete (seconds), default is 30. */
     pClient->setConnectTimeout(5 * 1000);  // 5 seconds
 
@@ -262,13 +262,6 @@ bool SpinBLEClient::connectToServer() {
       pClient->deleteServices();
       NimBLEDevice::getScan()->erase(pClient->getPeerAddress());
       NimBLEDevice::deleteClient(pClient);
-      return false;
-    }
-  }
-
-  if (!pClient->isConnected()) {
-    if (!pClient->connect(myDevice)) {
-      SS2K_LOG(BLE_CLIENT_LOG_TAG, "Failed to connect");
       return false;
     }
   }
@@ -293,7 +286,6 @@ bool SpinBLEClient::connectToServer() {
   pSvc = pClient->getService(serviceUUID);
   if (pSvc) { /** make sure it's not null */
     this->reconnectTries = MAX_RECONNECT_TRIES;
-    // SS2K_LOG(BLE_CLIENT_LOG_TAG, "Successful %s subscription.", pChr->getUUID().toString().c_str());
     spinBLEClient.myBLEDevices[device_number].doConnect = false;
     this->reconnectTries                                = MAX_RECONNECT_TRIES;
     spinBLEClient.myBLEDevices[device_number].set(myDevice, pClient->getConnHandle(), serviceUUID, charUUID);

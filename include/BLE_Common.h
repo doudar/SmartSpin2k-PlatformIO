@@ -19,6 +19,10 @@
 #include "BLE_Wattbike_Service.h"
 #include "Constants.h"
 
+//Client size allocated to the queue for receiving characteristic data
+#define NOTIFY_DATA_QUEUE_SIZE 25
+#define NOTIFY_DATA_QUEUE_LENGTH 10
+
 // Vector of supported BLE services and their corresponding characteristic UUIDs
 struct BLEServiceInfo {
   BLEUUID serviceUUID;
@@ -130,10 +134,12 @@ void bleClientTask(void* pvParameters);
 // CYCLINGPOWERMEASUREMENT_UUID, HEARTCHARACTERISTIC_UUID,
 // FLYWHEEL_UART_TX_UUID};
 
+
+
 typedef struct NotifyData {
   NimBLEUUID serviceUUID;
   NimBLEUUID charUUID;
-  uint8_t data[25];
+  uint8_t data[NOTIFY_DATA_QUEUE_SIZE];
   size_t length;
 } NotifyData;
 
@@ -171,7 +177,7 @@ class SpinBLEAdvertisedDevice {
   void set(const NimBLEAdvertisedDevice* device, int id = BLE_HS_CONN_HANDLE_NONE, BLEUUID inServiceUUID = (uint16_t)0x0000, BLEUUID inCharUUID = (uint16_t)0x0000);
   void reset();
   void print();
-  bool enqueueData(uint8_t data[25], size_t length, NimBLEUUID serviceUUID, NimBLEUUID charUUID);
+  bool enqueueData(uint8_t data[NOTIFY_DATA_QUEUE_SIZE], size_t length, NimBLEUUID serviceUUID, NimBLEUUID charUUID);
   NotifyData dequeueData();
 };
 

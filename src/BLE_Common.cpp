@@ -47,24 +47,18 @@ void BLECommunications() {
     // **********************************Client***************************************
     for (auto& _BLEd : spinBLEClient.myBLEDevices) {  // loop through discovered devices
       if (_BLEd.connectedClientID != BLE_HS_CONN_HANDLE_NONE) {
-        // SS2K_LOGW(BLE_COMMON_LOG_TAG, "Address: (%s) Client ID: (%d) SerUUID: (%s) CharUUID: (%s) HRM: (%s) PM: (%s) CSC: (%s) CT: (%s) doConnect: (%s) postConnect: (%s)",
-        //           _BLEd.peerAddress.toString().c_str(), _BLEd.connectedClientID, _BLEd.serviceUUID.toString().c_str(), _BLEd.charUUID.toString().c_str(),
-        //           _BLEd.isHRM ? "true" : "false", _BLEd.isPM ? "true" : "false", _BLEd.isCSC ? "true" : "false", _BLEd.isCT ? "true" : "false", _BLEd.doConnect ? "true" :
-        //           "false", _BLEd.getPostConnected() ? "true" : "false");
         if (_BLEd.advertisedDevice) {                                                                // is device registered?
           if ((_BLEd.connectedClientID != BLE_HS_CONN_HANDLE_NONE) && (_BLEd.doConnect == false)) {  // client must not be in connection process
             if (BLEDevice::getClientByPeerAddress(_BLEd.peerAddress)) {                              // nullptr check
               BLEClient* pClient = NimBLEDevice::getClientByPeerAddress(_BLEd.peerAddress);
               // Client connected with a valid UUID registered
               if ((_BLEd.serviceUUID != BLEUUID((uint16_t)0x0000)) && (pClient->isConnected())) {
-                BLERemoteCharacteristic* pRemoteBLECharacteristic = pClient->getService(_BLEd.serviceUUID)->getCharacteristic(_BLEd.charUUID);
 
                 // Handle BLE HID Remotes
                 if (_BLEd.serviceUUID == HID_SERVICE_UUID) {
                   spinBLEClient.keepAliveBLE_HID(pClient);  // keep alive doesn't seem to help :(
                   continue;                                 // There is not data that needs to be dequeued for the remote, so got to the next device.
                 }
-
                 // Dequeue sensor data we stored during notifications
                 while (pdTRUE) {
                   NotifyData incomingNotifyData = _BLEd.dequeueData();
@@ -77,7 +71,7 @@ void BLECommunications() {
                   for (size_t i = 0; i < length; i++) {
                     pData[i] = incomingNotifyData.data[i];
                   }
-                  collectAndSet(incomingNotifyData.charUUID, incomingNotifyData.serviceUUID, pRemoteBLECharacteristic->getRemoteService()->getClient()->getPeerAddress(), pData,
+                  collectAndSet(incomingNotifyData.charUUID, incomingNotifyData.serviceUUID, _BLEd.peerAddress, pData,
                                 length);
                 }
 

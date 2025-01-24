@@ -309,12 +309,11 @@ void BLE_Fitness_Machine_Service::processFTMSWrite() {
       ftmsStatus            = {FitnessMachineStatus::StartedOrResumedByUser};
       ftmsTrainingStatus[1] = FitnessMachineTrainingStatus::Other;  // 0x00;
       fitnessMachineTrainingStatus->setValue(ftmsTrainingStatus, 2);
-      fitnessMachineTrainingStatus->notify(false);
     }
     fitnessMachineStatusCharacteristic->setValue(ftmsStatus.data(), ftmsStatus.size());
     pCharacteristic->indicate();
-    fitnessMachineTrainingStatus->notify(false);
-    fitnessMachineStatusCharacteristic->notify(false);
+    fitnessMachineTrainingStatus->notify();
+    fitnessMachineStatusCharacteristic->notify();
   }
 }
 
