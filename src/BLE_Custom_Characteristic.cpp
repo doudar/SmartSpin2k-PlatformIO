@@ -102,7 +102,7 @@ void BLE_ss2kCustomCharacteristic::update() {}
 
 void ss2kCustomCharacteristicCallbacks::onWrite(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) {
   std::string rxValue = pCharacteristic->getValue();
-  SS2K_LOG(CUSTOM_CHAR_LOG_TAG, "Write from %s", connInfo.getAddress().toString().c_str());
+  //SS2K_LOG(CUSTOM_CHAR_LOG_TAG, "Write from %s", connInfo.getAddress().toString().c_str());
   BLE_ss2kCustomCharacteristic::process(rxValue);
 }
 
@@ -679,6 +679,7 @@ void BLE_ss2kCustomCharacteristic::process(std::string rxValue) {
           for (int i = 0; i < POWERTABLE_WATT_SIZE; i++) {
             powerTable->tableRow[rxValue[2]].tableEntry[i].targetPosition = (int16_t((uint8_t)(rxValue[i*2 + 3]) << 0 | (uint8_t)(rxValue[i*2 + 4]) << 8));
           }
+            powerTable->saveFlag = true;
         } else {
           //SS2K_LOG(CUSTOM_CHAR_LOG_TAG, "Table row invalid");
           // Logging causes crashes in ISR
@@ -758,6 +759,20 @@ void BLE_ss2kCustomCharacteristic::process(std::string rxValue) {
         returnValue[0] = cc_success;
         userConfig->setHomingSensitivity(bytes_to_u16(rxValue[3], rxValue[2]));
         logBufLength += snprintf(logBuf + logBufLength, kLogBufCapacity - logBufLength, "(%d)", userConfig->getHomingSensitivity());
+      }
+      break;
+
+    case BLE_pTab4Pwr:  // 0x2D
+      logBufLength += snprintf(logBuf + logBufLength, kLogBufCapacity - logBufLength, "<-pTab4Pwr");
+      if (rxValue[0] == cc_read) {
+        returnValue[0] = cc_success;
+        returnValue[2] = (uint8_t)(userConfig->getPTab4Pwr());
+        returnLength += 1;
+      }
+      if (rxValue[0] == cc_write) {
+        returnValue[0] = cc_success;
+        userConfig->setPTab4Pwr(rxValue[2]);
+        logBufLength += snprintf(logBuf + logBufLength, kLogBufCapacity - logBufLength, "(%s)", userConfig->getPTab4Pwr() ? "true" : "false");
       }
       break;
 
@@ -928,6 +943,11 @@ void BLE_ss2kCustomCharacteristic::parseNemit() {
   if (userConfig->getHomingSensitivity() != _oldParams.getHomingSensitivity()) {
     _oldParams.setHomingSensitivity(userConfig->getHomingSensitivity());
     BLE_ss2kCustomCharacteristic::notify(BLE_homingSensitivity);
+    return;
+  }
+  if (userConfig->getPTab4Pwr() != _oldParams.getPTab4Pwr()) {
+    _oldParams.setPTab4Pwr(userConfig->getPTab4Pwr());
+    BLE_ss2kCustomCharacteristic::notify(BLE_pTab4Pwr);
     return;
   }
 }

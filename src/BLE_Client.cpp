@@ -46,6 +46,17 @@ void SpinBLEClient::start() {
   pBLEScan->setActiveScan(true);
 }
 
+/**
+ * @brief Callback function for BLE notifications.
+ *
+ * This function is called whenever a notification is received from a BLE characteristic.
+ * It handles specific notifications for the HID service and enqueues sensor data for further processing.
+ *
+ * @param pBLERemoteCharacteristic Pointer to the remote characteristic that generated the notification.
+ * @param pData Pointer to the data received in the notification.
+ * @param length Length of the data received.
+ * @param isNotify Boolean indicating if the notification is a notify or indicate.
+ */
 static void notifyCB(NimBLERemoteCharacteristic *pBLERemoteCharacteristic, uint8_t *pData, size_t length, bool isNotify) {
   // Parse BLE shifter info.
   if (pBLERemoteCharacteristic->getRemoteService()->getUUID() == HID_SERVICE_UUID) {
@@ -57,7 +68,7 @@ static void notifyCB(NimBLERemoteCharacteristic *pBLERemoteCharacteristic, uint8
       rtConfig->setShifterPosition(rtConfig->getShifterPosition() - 1);
     }
   }
-  // enqueue sensor data
+  // Enqueue sensor data
   for (size_t i = 0; i < NUM_BLE_DEVICES; i++) {
     if (pBLERemoteCharacteristic->getClient()->getPeerAddress() == spinBLEClient.myBLEDevices[i].peerAddress) {
       spinBLEClient.myBLEDevices[i].enqueueData(pData, length, pBLERemoteCharacteristic->getRemoteService()->getUUID(), pBLERemoteCharacteristic->getUUID());
@@ -65,6 +76,15 @@ static void notifyCB(NimBLERemoteCharacteristic *pBLERemoteCharacteristic, uint8
   }
 }
 
+/**
+ * @brief Subscribes to all notifications for supported BLE services on the given client.
+ *
+ * This function iterates through all supported BLE services and subscribes to notifications
+ * for each characteristic that supports notifications or indications.
+ *
+ * @param pClient Pointer to the NimBLEClient object representing the BLE client.
+ *                The client must be connected for the function to proceed.
+ */
 void subscribeToAllNotifications(NimBLEClient *pClient) {
   if (!pClient || !pClient->isConnected()) {
     SS2K_LOG(BLE_CLIENT_LOG_TAG, "Client not connected for notifications");
@@ -92,6 +112,31 @@ void subscribeToAllNotifications(NimBLEClient *pClient) {
 
 // BLE Client loop task.
 // Manages device connections and scanning.
+/**
+ * @brief Task function to manage BLE client operations.
+ *
+ * This function handles the BLE client operations including scanning for BLE devices,
+ * connecting to BLE servers, and managing BLE connections. It runs in an infinite loop
+ * with a delay between iterations.
+ *
+ * @param pvParameters Pointer to the parameters passed to the task (unused).
+ *
+ * The function performs the following operations:
+ * - Checks and manages BLE reconnections.
+ * - Disconnects all connected servers if an update is in progress.
+ * - Scans for BLE devices to connect to the client.
+ * - Connects BLE servers to the client.
+ * - Manages the spin down process for the server.
+ *
+ * The function uses the following global variables and objects:
+ * - spinBLEClient: Manages BLE client operations.
+ * - ss2k: Represents the main application state and configuration.
+ * - rtConfig: Runtime configuration for the application.
+ * - spinBLEServer: Manages BLE server operations.
+ *
+ * The function also includes debug logging and stack high water mark monitoring
+ * when the DEBUG_STACK macro is defined.
+ */
 void bleClientTask(void *pvParameters) {
   long int scanDelay = millis();
   spinBLEClient.checkBLEReconnect();
@@ -285,7 +330,7 @@ bool SpinBLEClient::connectToServer() {
 
   pSvc = pClient->getService(serviceUUID);
   if (pSvc) { /** make sure it's not null */
-    this->reconnectTries = MAX_RECONNECT_TRIES;
+    this->reconnectTries                                = MAX_RECONNECT_TRIES;
     spinBLEClient.myBLEDevices[device_number].doConnect = false;
     this->reconnectTries                                = MAX_RECONNECT_TRIES;
     spinBLEClient.myBLEDevices[device_number].set(myDevice, pClient->getConnHandle(), serviceUUID, charUUID);
@@ -359,9 +404,21 @@ void MyClientCallback::onAuthenticationComplete(NimBLEConnInfo &connInfo) {
 }
 
 /**
- * Scan for BLE servers and find the first one that advertises the service we are looking for.
+ * @brief Callback function that is called when a BLE device is found during scanning.
+ *
+ * This function processes the advertised BLE device, checks if it matches the supported devices,
+ * and attempts to connect to it if it matches the user configuration.
+ *
+ * @param advertisedDevice Pointer to the NimBLEAdvertisedDevice object representing the found device.
+ *
+ * The function performs the following steps:
+ * - Logs the found device.
+ * - Checks if the device has a service UUID and if it is supported.
+ * - Depending on the service UUID, it checks if the device matches the user configuration for
+ *   connected remote, heart monitor, or power meter.
+ * - If the device matches the user configuration, it attempts to connect to the device and logs the result.
+ * - If the device does not match the user configuration, it ignores the device.
  */
-
 void ScanCallbacks::onResult(const NimBLEAdvertisedDevice *advertisedDevice) {
   Serial.printf("Advertised Device found: %s\n", advertisedDevice->toString().c_str());
   // Define granular constants for maximal reuse during logging
@@ -808,6 +865,12 @@ void SpinBLEClient::handleBattInfo(NimBLEClient *pClient, bool updateNow = false
   static unsigned long last_battery_update = 0;
   if ((millis() - last_battery_update >= BATTERY_UPDATE_INTERVAL_MILLIS) || (last_battery_update == 0) || updateNow) {
     last_battery_update = millis();
+    if (pClient->getService(BATTERYSERVICE_UUID) == nullptr) {
+      return;
+    }
+    if (pClient->getService(BATTERYSERVICE_UUID)->getCharacteristic(BATTERYCHARACTERISTIC_UUID) == nullptr) {
+      return;
+    }
     if (pClient->getService(HEARTSERVICE_UUID) && pClient->getService(BATTERYSERVICE_UUID)) {  // get battery level at first connect
       BLERemoteCharacteristic *battCharacteristic = pClient->getService(BATTERYSERVICE_UUID)->getCharacteristic(BATTERYCHARACTERISTIC_UUID);
       if (battCharacteristic != nullptr) {

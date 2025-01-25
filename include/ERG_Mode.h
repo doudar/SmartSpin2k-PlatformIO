@@ -89,6 +89,7 @@ class TestResults {
 
 class PowerTable {
  public:
+  bool saveFlag = false;
   TableRow tableRow[POWERTABLE_CAD_SIZE];
 
   // What used to be in the ERGTaskLoop(). This is the main control function for ERG Mode and the powertable operations.
@@ -105,6 +106,9 @@ class PowerTable {
 
   // returns incline for wattTarget. Null if not found.
   int32_t lookup(int watts, int cad);
+
+  // returns watts for given cadence and target position. Returns RETURN_ERROR if not found.
+  int32_t lookupWatts(int cad, int32_t targetPosition);
 
   // automatically load or save the Power Table
   bool _manageSaveState();

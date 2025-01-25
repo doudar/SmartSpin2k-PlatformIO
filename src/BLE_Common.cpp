@@ -53,7 +53,6 @@ void BLECommunications() {
               BLEClient* pClient = NimBLEDevice::getClientByPeerAddress(_BLEd.peerAddress);
               // Client connected with a valid UUID registered
               if ((_BLEd.serviceUUID != BLEUUID((uint16_t)0x0000)) && (pClient->isConnected())) {
-
                 // Handle BLE HID Remotes
                 if (_BLEd.serviceUUID == HID_SERVICE_UUID) {
                   spinBLEClient.keepAliveBLE_HID(pClient);  // keep alive doesn't seem to help :(
@@ -71,11 +70,11 @@ void BLECommunications() {
                   for (size_t i = 0; i < length; i++) {
                     pData[i] = incomingNotifyData.data[i];
                   }
-                  collectAndSet(incomingNotifyData.charUUID, incomingNotifyData.serviceUUID, _BLEd.peerAddress, pData,
-                                length);
+                  collectAndSet(incomingNotifyData.charUUID, incomingNotifyData.serviceUUID, _BLEd.peerAddress, pData, length);
                 }
-
-                spinBLEClient.handleBattInfo(pClient, false);
+                if (_BLEd.getPostConnected()) {
+                  spinBLEClient.handleBattInfo(pClient, false);
+                }
 
               } else if (!pClient->isConnected()) {  // This shouldn't ever be
                                                      // called...

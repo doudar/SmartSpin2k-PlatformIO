@@ -543,6 +543,11 @@ void HTTP_Server::settingsProcessor() {
   } else if (wasSettingsUpdate) {
     userConfig->setUdpLogEnabled(false);
   }
+  if (!server.arg("pTab4Pwr").isEmpty()) {
+    userConfig->setPTab4Pwr(true);
+  } else if (wasSettingsUpdate) {
+    userConfig->setPTab4Pwr(false);
+  }
   if (!server.arg("stealthChop").isEmpty()) {
     userConfig->setStealthChop(true);
     ss2k->updateStealthChop();
