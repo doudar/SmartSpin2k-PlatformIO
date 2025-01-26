@@ -65,12 +65,12 @@ void PowerTable::runERG() {
       pTabUsed4Pwr = true;
       if (this->_hasBeenLoadedThisSession) {
         rtConfig->watts.setValue(lookupWatts(rtConfig->cad.getValue(), ss2k->getCurrentPosition()));
-        // rtConfig->watts.setSimulate(true);
       } else {
         // only run _manageSaveState every 5 seconds
         static unsigned long int saveStateTimer = millis();
         if ((millis() - saveStateTimer) > 5000) {
-          this->_manageSaveState();
+          //load the power table, true to skip checks. 
+          this->_manageSaveState(true);
           saveStateTimer = millis();
         }
       }
@@ -875,7 +875,7 @@ void PowerTable::newEntry(PowerBuffer& powerBuffer) {
   BLE_ss2kCustomCharacteristic::notify(0x27, k);
 }
 
-bool PowerTable::_manageSaveState() {
+bool PowerTable::_manageSaveState(bool canSkipReliabilityChecks) {
   // Check if the table has been loaded in this session
   if (!this->_hasBeenLoadedThisSession) {
     SS2K_LOG(POWERTABLE_LOG_TAG, "Loading Power Table....");
@@ -895,6 +895,11 @@ bool PowerTable::_manageSaveState() {
     bool savedHomed;
     file.read((uint8_t*)&savedHomed, sizeof(savedHomed));
 
+    // If both current and saved tables were created with homing, we can skip position reliability checks
+    if (!canSkipReliabilityChecks) {
+      canSkipReliabilityChecks = savedHomed && rtConfig->getHomed();
+    }
+
     if (version != TABLE_VERSION) {
       SS2K_LOG(POWERTABLE_LOG_TAG, "Expected power table version %d, found version %d", TABLE_VERSION, version);
       file.close();
@@ -911,9 +916,6 @@ bool PowerTable::_manageSaveState() {
     }
 
     SS2K_LOG(POWERTABLE_LOG_TAG, "Loading power table version %d, Size %d, Homed %d", version, savedQuality, savedHomed);
-
-    // If both current and saved tables were created with homing, we can skip position reliability checks
-    bool canSkipReliabilityChecks = savedHomed && rtConfig->getHomed();
 
     if (!canSkipReliabilityChecks) {
       // Initialize a counter for reliable positions

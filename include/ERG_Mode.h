@@ -111,7 +111,7 @@ class PowerTable {
   int32_t lookupWatts(int cad, int32_t targetPosition);
 
   // automatically load or save the Power Table
-  bool _manageSaveState();
+  bool _manageSaveState(bool canSkipReliabilityChecks = false);
 
   // save powertable from littlefs
   bool _save();
