@@ -43,12 +43,12 @@ void BLE_Fitness_Machine_Service::setupService(NimBLEServer *pServer, MyCharacte
   pFitnessMachineService             = spinBLEServer.pServer->createService(FITNESSMACHINESERVICE_UUID);
   fitnessMachineFeature              = pFitnessMachineService->createCharacteristic(FITNESSMACHINEFEATURE_UUID, NIMBLE_PROPERTY::READ);
   fitnessMachineControlPoint         = pFitnessMachineService->createCharacteristic(FITNESSMACHINECONTROLPOINT_UUID, NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::INDICATE);
-  fitnessMachineStatusCharacteristic = pFitnessMachineService->createCharacteristic(FITNESSMACHINESTATUS_UUID, NIMBLE_PROPERTY::INDICATE);
-  fitnessMachineIndoorBikeData       = pFitnessMachineService->createCharacteristic(FITNESSMACHINEINDOORBIKEDATA_UUID, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
+  fitnessMachineStatusCharacteristic = pFitnessMachineService->createCharacteristic(FITNESSMACHINESTATUS_UUID, NIMBLE_PROPERTY::NOTIFY);
+  fitnessMachineIndoorBikeData       = pFitnessMachineService->createCharacteristic(FITNESSMACHINEINDOORBIKEDATA_UUID, NIMBLE_PROPERTY::NOTIFY);
   fitnessMachineResistanceLevelRange = pFitnessMachineService->createCharacteristic(FITNESSMACHINERESISTANCELEVELRANGE_UUID, NIMBLE_PROPERTY::READ);
   fitnessMachinePowerRange           = pFitnessMachineService->createCharacteristic(FITNESSMACHINEPOWERRANGE_UUID, NIMBLE_PROPERTY::READ);
   fitnessMachineInclinationRange     = pFitnessMachineService->createCharacteristic(FITNESSMACHINEINCLINATIONRANGE_UUID, NIMBLE_PROPERTY::READ);
-  fitnessMachineTrainingStatus       = pFitnessMachineService->createCharacteristic(FITNESSMACHINETRAININGSTATUS_UUID, NIMBLE_PROPERTY::INDICATE);
+  fitnessMachineTrainingStatus       = pFitnessMachineService->createCharacteristic(FITNESSMACHINETRAININGSTATUS_UUID, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
 
   fitnessMachineFeature->setValue(ftmsFeature.bytes, sizeof(ftmsFeature));
   ftmsIndoorBikeData[0] = static_cast<uint8_t>(ftmsIBDFlags & 0xFF);         // LSB, mask with 0xFF to get the lower 8 bits
@@ -130,21 +130,23 @@ void BLE_Fitness_Machine_Service::processFTMSWrite() {
 
       switch ((uint8_t)rxValue[0]) {
         case FitnessMachineControlPointProcedure::RequestControl:
-          returnValue[2] = FitnessMachineControlPointResultCode::Success;  // 0x01;
+        static bool firstRequest = true;
+          returnValue[2] = firstRequest ? FitnessMachineControlPointResultCode::Success : FitnessMachineControlPointResultCode::OpCodeNotSupported;
+          firstRequest = !firstRequest;
           rtConfig->watts.setTarget(0);
           rtConfig->setSimTargetWatts(false);
           logBufLength += snprintf(logBuf + logBufLength, kLogBufCapacity - logBufLength, "-> Control Request");
-          ftmsTrainingStatus[1] = FitnessMachineTrainingStatus::Idle;  // 0x01;
+          ftmsTrainingStatus[1] = FitnessMachineTrainingStatus::Other;  // 0x01;
           fitnessMachineTrainingStatus->setValue(ftmsTrainingStatus, 2);
           ftmsStatus = {FitnessMachineStatus::StartedOrResumedByUser};
           pCharacteristic->setValue(returnValue, 3);
           break;
 
         case FitnessMachineControlPointProcedure::Reset: {
-          returnValue[2] = FitnessMachineControlPointResultCode::Success;  // 0x01;
+          returnValue[2] = FitnessMachineControlPointResultCode::InvalidParameter;  // 0x01;
 
           logBufLength += snprintf(logBuf + logBufLength, kLogBufCapacity - logBufLength, "-> Reset");
-          ftmsTrainingStatus[1] = FitnessMachineTrainingStatus::Idle;  // 0x01;
+          ftmsTrainingStatus[1] = FitnessMachineTrainingStatus::Other;  // 0x01;
           ftmsStatus            = {FitnessMachineStatus::Reset};
           fitnessMachineTrainingStatus->setValue(ftmsTrainingStatus, 2);
           pCharacteristic->setValue(returnValue, 3);
@@ -309,11 +311,21 @@ void BLE_Fitness_Machine_Service::processFTMSWrite() {
       ftmsStatus            = {FitnessMachineStatus::StartedOrResumedByUser};
       ftmsTrainingStatus[1] = FitnessMachineTrainingStatus::Other;  // 0x00;
       fitnessMachineTrainingStatus->setValue(ftmsTrainingStatus, 2);
+      fitnessMachineTrainingStatus->notify();
     }
     fitnessMachineStatusCharacteristic->setValue(ftmsStatus.data(), ftmsStatus.size());
+    SS2K_LOG(FMTS_SERVER_LOG_TAG, "FTMS Status: %02x %02x", ftmsStatus[0], ftmsStatus[1]);
     pCharacteristic->indicate();
-    fitnessMachineTrainingStatus->indicate();
-    fitnessMachineStatusCharacteristic->indicate();
+    std::string characteristicValue = pCharacteristic->getValue();
+    std::string logValue;
+    for (size_t i = 0; i < characteristicValue.length(); ++i) {
+      char buf[4];
+      snprintf(buf, sizeof(buf), "%02x ", (unsigned char)characteristicValue[i]);
+      logValue += buf;
+    }
+    SS2K_LOG(FMTS_SERVER_LOG_TAG, "FTMS CP Value: %s", logValue.c_str());
+    fitnessMachineTrainingStatus->notify();
+    fitnessMachineStatusCharacteristic->notify();
   }
 }
 

@@ -224,7 +224,7 @@ void SS2K::maintenanceLoop(void *pvParameters) {
           speed = userConfig->getStepperSpeed();
         }
       }
-
+  
       ss2k->updateStepperSpeed(speed);
     }
 

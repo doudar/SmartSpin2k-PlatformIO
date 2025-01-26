@@ -184,8 +184,13 @@ void MyCharacteristicCallbacks::onWrite(NimBLECharacteristic* pCharacteristic, N
 }
 
 void MyCharacteristicCallbacks::onStatus(NimBLECharacteristic* pCharacteristic, int code) {
-  //SS2K_LOG(BLE_SERVER_LOG_TAG, "Notification/Indication status code: %d for characteristic: %s",
-  //         code, pCharacteristic->getUUID().toString().c_str());
+  //loop through and print out the characteristic data
+  for(int i = 0; i < pCharacteristic->getValue().size(); i++) {
+    SS2K_LOG(BLE_SERVER_LOG_TAG, "Characteristic Data: %d", pCharacteristic->getValue()[i]);
+  }
+  
+  SS2K_LOG(BLE_SERVER_LOG_TAG, "Notification/Indication status code: %d for characteristic: %s",
+           code, pCharacteristic->getUUID().toString().c_str());
 }
 
 void MyCharacteristicCallbacks::onSubscribe(NimBLECharacteristic *pCharacteristic, NimBLEConnInfo& connInfo, uint16_t subValue) {
