@@ -838,7 +838,7 @@ void SpinBLEClient::checkBLEReconnect() {
     this->doScan = true;
     SS2K_LOG(BLE_CLIENT_LOG_TAG, "No HRM Connected");
   }
-  if ((String(userConfig->getConnectedPowerMeter()) != "none") && !(spinBLEClient.connectedPM)) {
+  if ((String(userConfig->getConnectedPowerMeter()) != "none") && !(spinBLEClient.connectedPM || spinBLEClient.connectedCD)) {
     this->doScan = true;
     SS2K_LOG(BLE_CLIENT_LOG_TAG, "No PM Connected");
   }
