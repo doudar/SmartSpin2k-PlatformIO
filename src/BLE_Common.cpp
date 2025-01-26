@@ -101,7 +101,7 @@ void BLECommunications() {
 #endif  // DEBUG_HR_TO_PWR
 
     // Set outputs to zero if we're not simulating or have connected devices.
-    if (!spinBLEClient.connectedPM && !hr2p && !rtConfig->watts.getSimulate() && !rtConfig->cad.getSimulate()) {
+    if (!spinBLEClient.connectedPM && !hr2p && !rtConfig->watts.getSimulate() && !rtConfig->cad.getSimulate() && !userConfig->getPTab4Pwr()) {
       rtConfig->cad.setValue(0);
       rtConfig->watts.setValue(0);
     }
