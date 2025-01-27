@@ -1,126 +1,170 @@
 <!DOCTYPE html>
-<html>
-
-
+<html lang="en">
 <head>
-  <style type="text/css">
-    html {
-      background-color: #03245c;
-    }
-  </style>
-  <title>SmartSpin2k Web Server</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SmartSpin2k Heart Rate to Power</title>
+  <style>html{background-color:#03245c}</style>
 </head>
-
 <body>
-  <fieldset>
-    <legend><a href="http://github.com/doudar/SmartSpin2k">http://github.com/doudar/SmartSpin2k</a></legend>
-    <p style="text-align: left;"><strong><a href="index.html">Main Index</a></strong></p>
-    <h1>
-      <div class="watermark" id="loadingWatermark">Loading</div>
-    </h1>
-    <h1><strong>Physical Working Capacity</strong></h1>
-    <h2>
-      <p>For the most accurate power estimation when not using a power meter, please submit the following information.
-        <br>Note: You can get estimated watts from any outdoor ride recorded in Strava with heart rate information.
-      </p>
-      <form action="/send_settings">
-        <table class="center" height="182" cellspacing="1">
-          <tbody>
-            <tr>
-              <td>
-                <p class="tooltip">Easy Session Average HR<span class="tooltiptext">Session 1 HR<br><br>Average
-                    Heartrate over an easy 1 Hour course.</span></p>
-              </td>
-              <td><input type="number" id="session1HR" name="session1HR" value="0" /></td>
-            </tr>
-            <tr>
-              <td>
-                <p class="tooltip">Easy Session Average Power<span class="tooltiptext">Average Power over an easy 1 hour
-                    course in watts.</span></p>
-              </td>
-              <td><input type="number" id="session1Pwr" name="session1Pwr" value="0" />
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <p class="tooltip">Hard Session Average HR<span class="tooltiptext">Average HR over a hard 1 hour
-                    course.</span></p>
-              </td>
-              <td><input type="number" id="session2HR" name="session2HR" value="0" />
-              </td>
-            <tr>
-              <td>
-                <p class="tooltip">Hard Session Average Power<span class="tooltiptext">Average Power over a hard 1 hour
-                    course in watts.</span></p>
-              </td>
-              <td><input type="number" id="session2Pwr" name="session2Pwr" value="0" />
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <p class="tooltip">HR->PWR<span class="tooltiptext">Automatically calculate watts using
-                    heart rate when power meter not connected</span></p>
-              </td>
-              <td><label class="switch"><input type="checkbox" name="hr2Pwr" id="hr2Pwr"><span
-                    class="slider"></span></label>
-              </td>
-            </tr>
-          </tbody>
-        </table><br>
-        <input type="submit" value="Submit" />
-        <p><a href="https://github.com/doudar/SmartSpin2k/wiki/Riding-SmartSpin2k-With-Heart-Rate-Derived-Power">Page Help</a></p>
-      </form>
-    </h2>
-</body>
+  <div class="page-container">
+    <header>
+      <nav aria-label="Main navigation">
+        <a href="index.html" class="back-link" aria-label="Back to main menu">← Main Menu</a>
+        <a href="http://github.com/doudar/SmartSpin2k" class="github-link">SmartSpin2k</a>
+      </nav>
+    </header>
 
-<script>
+    <main>
+      <div id="loadingWatermark" class="watermark" aria-hidden="true">Loading</div>
+      <h1 class="brand">Heart Rate to Power</h1>
 
+      <div class="settings-section">
+        <div class="info-box">
+          <p>For the most accurate power estimation when not using a power meter, please submit the following information.</p>
+          <p class="note">Note: You can get estimated watts from any outdoor ride recorded in Strava with heart rate information.</p>
+        </div>
 
-  //Update values on specified interval loading late because this tiny webserver hates frequent requests
-  setInterval(function () {
-    if (document.getElementById("session1HR").value == "0") {
-      requestConfigValues();
+        <form id="pwc-form" action="/send_settings" class="settings-grid">
+          <div class="setting-group">
+            <h2>Easy Session Data</h2>
+            <div class="input-group">
+              <label for="session1HR" class="setting-label tooltip">
+                Average Heart Rate
+                <span class="tooltiptext">Session 1 HR - Average Heartrate over an easy 1 Hour course.</span>
+              </label>
+              <input type="number" id="session1HR" name="session1HR" value="0" min="0" max="250" class="number-input">
+              <span class="unit">BPM</span>
+            </div>
+
+            <div class="input-group">
+              <label for="session1Pwr" class="setting-label tooltip">
+                Average Power
+                <span class="tooltiptext">Average Power over an easy 1 hour course in watts.</span>
+              </label>
+              <input type="number" id="session1Pwr" name="session1Pwr" value="0" min="0" max="2000" class="number-input">
+              <span class="unit">W</span>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <h2>Hard Session Data</h2>
+            <div class="input-group">
+              <label for="session2HR" class="setting-label tooltip">
+                Average Heart Rate
+                <span class="tooltiptext">Average HR over a hard 1 hour course.</span>
+              </label>
+              <input type="number" id="session2HR" name="session2HR" value="0" min="0" max="250" class="number-input">
+              <span class="unit">BPM</span>
+            </div>
+
+            <div class="input-group">
+              <label for="session2Pwr" class="setting-label tooltip">
+                Average Power
+                <span class="tooltiptext">Average Power over a hard 1 hour course in watts.</span>
+              </label>
+              <input type="number" id="session2Pwr" name="session2Pwr" value="0" min="0" max="2000" class="number-input">
+              <span class="unit">W</span>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <div class="toggle-group">
+              <label class="setting-label tooltip">
+                Enable HR to Power
+                <span class="tooltiptext">Automatically calculate watts using heart rate when power meter not connected</span>
+              </label>
+              <label class="switch">
+                <input type="checkbox" name="hr2Pwr" id="hr2Pwr">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div id="saveStatus" class="status-message" role="status" aria-live="polite"></div>
+
+          <div class="button-group">
+            <button type="submit" class="primary-button">Save Settings</button>
+          </div>
+        </form>
+
+        <footer>
+          <a href="https://github.com/doudar/SmartSpin2k/wiki/Riding-SmartSpin2k-With-Heart-Rate-Derived-Power" class="help-link">Need Help?</a>
+        </footer>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const form = document.getElementById('pwc-form');
+    const saveStatus = document.getElementById('saveStatus');
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const formData = new FormData(form);
+      const params = new URLSearchParams();
+      
+      for (const [key, value] of formData) {
+        if (value !== '0' && value !== '') {
+          params.append(key, value);
+        }
+      }
+
+      if (document.getElementById('hr2Pwr').checked) {
+        params.append('hr2Pwr', 'true');
+      }
+
+      fetch('/send_settings?' + params.toString(), { method: 'GET' })
+        .then(() => {
+          showSaveStatus('Settings saved successfully', 'success');
+        })
+        .catch(error => {
+          showSaveStatus('Failed to save settings', 'error');
+          console.error('Error:', error);
+        });
+    });
+
+    function showSaveStatus(message, type = 'info') {
+      saveStatus.textContent = message;
+      saveStatus.className = `status-message ${type}`;
+      setTimeout(() => {
+        saveStatus.textContent = '';
+        saveStatus.className = 'status-message';
+      }, 3000);
     }
 
-  }, 1000);
+    function requestConfigValues() {
+      fetch('/PWCJSON')
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById('session1HR').value = data.session1HR;
+          document.getElementById('session1Pwr').value = data.session1Pwr;
+          document.getElementById('session2HR').value = data.session2HR;
+          document.getElementById('session2Pwr').value = data.session2Pwr;
+          document.getElementById('hr2Pwr').checked = data.hr2Pwr;
+          document.getElementById('loadingWatermark')?.remove();
+        })
+        .catch(error => console.error('Error:', error));
+    }
 
-  function requestConfigValues() {
-    var xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function () {
-      if (this.readyState == 4 && this.status == 200) {
-        var obj = JSON.parse(this.responseText);
-        document.getElementById("session1HR").value = obj.session1HR;
-        document.getElementById("session1Pwr").value = obj.session1Pwr;
-        document.getElementById("session2HR").value = obj.session2HR;
-        document.getElementById("session2Pwr").value = obj.session2Pwr;
-        document.getElementById("hr2Pwr").checked = obj.hr2Pwr;
-        setTimeout(function () { document.getElementById("loadingWatermark").remove(); }, 1000);
-      }
-    };
-    xhttp.open("GET", "/PWCJSON", true);
-    xhttp.send();
-  }
+    function loadCss() {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'style.css';
+      document.head.appendChild(link);
+    }
 
-  //define function to load css
-  var loadCss = function () {
-    var cssLink = document.createElement('link');
-    cssLink.rel = 'stylesheet';
-    cssLink.href = 'style.css';
-    var head = document.getElementsByTagName('head')[0];
-    head.parentNode.insertBefore(cssLink, head);
-  };
-
-  //Delay loading css to not swamp webserver
-  window.addEventListener('load', function () {
-    setTimeout(loadCss, 100);
-  }, false);
-
-  function updateSlider(element, valueElement) {
-    var sliderValue = element.value;
-    valueElement.innerHTML = sliderValue;
-  }
-
-</script>
-
+    window.addEventListener('load', () => {
+      setTimeout(loadCss, 100);
+      requestConfigValues();
+      
+      // Retry loading if values are still default
+      setInterval(() => {
+        if (document.getElementById('session1HR').value === '0') {
+          requestConfigValues();
+        }
+      }, 1000);
+    });
+  </script>
+</body>
 </html>
