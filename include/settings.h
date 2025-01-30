@@ -254,7 +254,7 @@ const char* const DEFAULT_PASSWORD = "password";
 #define RUNTIMECONFIG_JSON_SIZE 1000 + DEBUG_LOG_BUFFER_SIZE
 
 // PowerTable Version
-#define TABLE_VERSION 5
+#define TABLE_VERSION 6
 
 /* Number of entries in the ERG Power Lookup Table
  This is currently maintained as to keep memory usage lower and reduce the print output of the table.
