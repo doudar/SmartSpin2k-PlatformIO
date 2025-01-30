@@ -14,6 +14,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Hardware
 
 
+## [25.1.19]
+
+### Added
+
+### Changed
+- Bugfix in ERG Mode
+- Bugfix for spamming log messages when using Peloton and not homed. 
+
+### Hardware
+
+
 ## [25.1.12]
 
 ### Added

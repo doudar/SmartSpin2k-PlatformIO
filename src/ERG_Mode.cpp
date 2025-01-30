@@ -1217,9 +1217,8 @@ void ErgMode::_updateValues(int newCadence, Measurement& newWatts, float newIncl
 
 bool ErgMode::_userIsSpinning(int cadence, float incline) {
   if (cadence <= MIN_ERG_CADENCE) {
-    if (!this->engineStopped) {                               // Test so motor stop command only happens once.
-      ss2k->motorStop();                                      // release tension
-      rtConfig->setTargetIncline(incline - WATTS_PER_SHIFT);  // release incline
+    if (!this->engineStopped) {                               // Test so motor stop command only happens once.                                    // release tension
+      rtConfig->setTargetIncline(0);  // release incline
       this->engineStopped = true;
     }
     return false;  // Cadence too low, nothing to do here

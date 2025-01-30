@@ -224,7 +224,6 @@ void SS2K::maintenanceLoop(void *pvParameters) {
           speed = userConfig->getStepperSpeed();
         }
       }
-
       ss2k->updateStepperSpeed(speed);
     }
 
@@ -263,10 +262,8 @@ void SS2K::maintenanceLoop(void *pvParameters) {
       userPWC->saveToLittleFS();
     }
 
-    // Things to do every two seconds
-    if ((millis() - intervalTimer) > 2003) {  // add check here for when to restart WiFi
-                                              // maybe if in STA mode and 8.8.8.8 no ping return?
-      // ss2k->restartWifi();
+    // Things to do every one seconds
+    if ((millis() - intervalTimer) > 1003) {
       logHandler.writeLogs();
       webSocketAppender.Loop();
       intervalTimer = millis();
@@ -471,7 +468,7 @@ void SS2K::moveStepper() {
     if (rtConfig->cad.getValue() > 1) {
       stepper->enableOutputs();
       stepper->setAutoEnable(false);
-    }else{
+    } else {
       stepper->setAutoEnable(true);
     }
 
@@ -674,11 +671,28 @@ void SS2K::updateStealthChop() {
 }
 
 // Applies userconfig stepper speed if speed not specified
+/**
+ * @brief Updates the speed of the stepper motor.
+ *
+ * This function updates the speed of the stepper motor to the specified value.
+ * If the provided speed is 0, it retrieves the speed from the user configuration.
+ * The function also includes a tolerance check to avoid unnecessary updates if
+ * the current speed is within 5 units of the target speed.
+ *
+ * @param speed The desired speed for the stepper motor. If 0, the speed is retrieved from user configuration.
+ */
 void SS2K::updateStepperSpeed(int speed) {
   if (speed == 0) {
     speed = userConfig->getStepperSpeed();
   }
-  //SS2K_LOG(MAIN_LOG_TAG, "StepperSpeed is now %d", speed);
+  int s = stepper->getSpeedInMilliHz() / 1000;
+  //Because the conversion to/from the TMC driver is not perfect, we need to allow a little bit of slop.
+  //Skip the update if the speed is within 5 of the target.
+  if (abs(s-speed) < 5) {
+    return;
+  }
+  speed = speed;
+  //SS2K_LOG(MAIN_LOG_TAG, "StepperSpeed is now %d, %d", speed, s);
   stepper->setSpeedInHz(speed);
 }
 
@@ -696,14 +710,6 @@ void SS2K::checkDriverTemperature() {
       driver.irun(currentBoard.pwrScaler);
     }
     overTemp = false;
-  }
-}
-
-void SS2K::motorStop(bool releaseTension) {
-  stepper->stopMove();
-  stepper->setCurrentPosition(ss2k->targetPosition);
-  if (releaseTension) {
-    stepper->moveTo(ss2k->targetPosition - userConfig->getShiftStep() * 4);
   }
 }
 
