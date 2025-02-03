@@ -341,7 +341,7 @@ TestResults PowerTable::testNeighbors(int i, int j, int testValue) {
         returnResult.leftNeighbor.i              = i;
         returnResult.leftNeighbor.j              = left;
         returnResult.leftNeighbor.found          = 1;
-        break;
+        break;  
       }
     }
   }
@@ -796,27 +796,149 @@ void PowerTable::newEntry(PowerBuffer& powerBuffer) {
   if (!(testResults.bottomNeighbor.passedTest && testResults.topNeighbor.passedTest && testResults.rightNeighbor.passedTest && testResults.leftNeighbor.passedTest)) {
     // test which bit fields didn't match
     if (!testResults.leftNeighbor.passedTest) {
-      this->tableRow[testResults.leftNeighbor.i].tableEntry[testResults.leftNeighbor.j].readings--;
-      SS2K_LOG(POWERTABLE_LOG_TAG, "PT failed Left (%d)(%d)(%d), readings (%d)", testResults.leftNeighbor.i, testResults.leftNeighbor.j, testResults.leftNeighbor.targetPosition,
+      if(testResults.leftNeighbor.j == k){ //if they are the same cadence
+      SS2K_LOG(POWERTABLE_LOG_TAG, "Left failed but have same cadence, left targetPosition: %d, currentPosition: %d", testResults.leftNeighbor.targetPosition, targetPosition);
+        if((testResults.leftNeighbor.targetPosition+5) >= targetPosition || (testResults.leftNeighbor.targetPosition+5) <= targetPosition){
+           float averagedPosition = float(targetPosition + testResults.leftNeighbor.targetPosition) / 2.0f;
+           this->tableRow[testResults.leftNeighbor.i].tableEntry[testResults.leftNeighbor.j].targetPosition = averagedPosition;
+          SS2K_LOG(POWERTABLE_LOG_TAG, "Cadence match: Averaged position for Left neighbor: (%d)(%d) new targetPosition: %f", testResults.leftNeighbor.i, testResults.leftNeighbor.j, averagedPosition);
+        }
+      }else {
+              this->tableRow[testResults.leftNeighbor.i].tableEntry[testResults.leftNeighbor.j].readings--;
+              SS2K_LOG(POWERTABLE_LOG_TAG, "PT failed Left (%d)(%d)(%d), readings (%d)", testResults.leftNeighbor.i, testResults.leftNeighbor.j, testResults.leftNeighbor.targetPosition,
                this->tableRow[testResults.leftNeighbor.i].tableEntry[testResults.leftNeighbor.j].readings);
+      }
     }
+
     if (!testResults.rightNeighbor.passedTest) {
-      this->tableRow[testResults.rightNeighbor.i].tableEntry[testResults.rightNeighbor.j].readings--;
-      SS2K_LOG(POWERTABLE_LOG_TAG, "PT failed Right (%d)(%d)(%d), readings (%d)", testResults.rightNeighbor.i, testResults.rightNeighbor.j,
-               testResults.rightNeighbor.targetPosition, this->tableRow[testResults.rightNeighbor.i].tableEntry[testResults.rightNeighbor.j].readings);
+      if(testResults.rightNeighbor.j == k) //if they are the same cadence
+      {  SS2K_LOG(POWERTABLE_LOG_TAG, "Right failed but have same cadence, right targetPosition: %d, currentPosition: %d", testResults.leftNeighbor.targetPosition, targetPosition);
+        if((testResults.rightNeighbor.targetPosition+5) >= targetPosition || (testResults.rightNeighbor.targetPosition+5) <= targetPosition){
+           float averagedPosition = float(targetPosition + testResults.rightNeighbor.targetPosition) / 2.0f;
+           this->tableRow[testResults.rightNeighbor.i].tableEntry[testResults.rightNeighbor.j].targetPosition = averagedPosition;
+          SS2K_LOG(POWERTABLE_LOG_TAG, "Cadence match: Averaged position for Left neighbor: (%d)(%d) new targetPosition: %f", testResults.rightNeighbor.i, testResults.rightNeighbor.j, averagedPosition);
+        }
+      }else {
+              this->tableRow[testResults.rightNeighbor.i].tableEntry[testResults.rightNeighbor.j].readings--;
+              SS2K_LOG(POWERTABLE_LOG_TAG, "PT failed Left (%d)(%d)(%d), readings (%d)", testResults.rightNeighbor.i, testResults.rightNeighbor.j, testResults.rightNeighbor.targetPosition,
+               this->tableRow[testResults.rightNeighbor.i].tableEntry[testResults.rightNeighbor.j].readings);
+      }
     }
+    
     if (!testResults.topNeighbor.passedTest) {
-      this->tableRow[testResults.topNeighbor.i].tableEntry[testResults.topNeighbor.j].readings--;
-      SS2K_LOG(POWERTABLE_LOG_TAG, "PT failed Top (%d)(%d)(%d), readings (%d)", testResults.topNeighbor.i, testResults.topNeighbor.j, testResults.topNeighbor.targetPosition,
+      if(testResults.topNeighbor.j == k) //if they are the same cadence
+      {  SS2K_LOG(POWERTABLE_LOG_TAG, "Top failed but have same cadence, top targetPosition: %d, currentPosition: %d", testResults.leftNeighbor.targetPosition, ss2k->getCurrentPosition());
+        if((testResults.topNeighbor.targetPosition+5) >= targetPosition || (testResults.topNeighbor.targetPosition+5)<= targetPosition){
+           float averagedPosition = float(targetPosition + testResults.topNeighbor.targetPosition) / 2.0f;
+           this->tableRow[testResults.topNeighbor.i].tableEntry[testResults.topNeighbor.j].targetPosition = averagedPosition;
+          SS2K_LOG(POWERTABLE_LOG_TAG, "Cadence match: Averaged position for Left neighbor: (%d)(%d) new targetPosition: %f", testResults.topNeighbor.i, testResults.topNeighbor.j, averagedPosition);
+        }
+      }else {
+              this->tableRow[testResults.topNeighbor.i].tableEntry[testResults.topNeighbor.j].readings--;
+              SS2K_LOG(POWERTABLE_LOG_TAG, "PT failed Left (%d)(%d)(%d), readings (%d)", testResults.topNeighbor.i, testResults.topNeighbor.j, testResults.topNeighbor.targetPosition,
                this->tableRow[testResults.topNeighbor.i].tableEntry[testResults.topNeighbor.j].readings);
+      }
     }
+
     if (!testResults.bottomNeighbor.passedTest) {
-      this->tableRow[testResults.bottomNeighbor.i].tableEntry[testResults.bottomNeighbor.j].readings--;
-      SS2K_LOG(POWERTABLE_LOG_TAG, "PT failed Bottom (%d)(%d)(%d), readings (%d)", testResults.bottomNeighbor.i, testResults.bottomNeighbor.j,
-               testResults.bottomNeighbor.targetPosition, this->tableRow[testResults.bottomNeighbor.i].tableEntry[testResults.bottomNeighbor.j].readings);
+      if(testResults.bottomNeighbor.j == k) //if they are the same cadence
+      {  SS2K_LOG(POWERTABLE_LOG_TAG, "Bottom failed but have same cadence, bottom targetPosition: %d, currentPosition: %d", testResults.leftNeighbor.targetPosition, targetPosition);
+        if((testResults.bottomNeighbor.targetPosition+5) >= targetPosition || (testResults.bottomNeighbor.targetPosition+5) <= targetPosition){
+           float averagedPosition = float(targetPosition + testResults.bottomNeighbor.targetPosition) / 2.0f;
+           this->tableRow[testResults.bottomNeighbor.i].tableEntry[testResults.bottomNeighbor.j].targetPosition = averagedPosition;
+          SS2K_LOG(POWERTABLE_LOG_TAG, "Cadence match: Averaged position for Left neighbor: (%d)(%d) new targetPosition: %f", testResults.bottomNeighbor.i, testResults.bottomNeighbor.j, averagedPosition);
+        }
+      }else {
+              this->tableRow[testResults.bottomNeighbor.i].tableEntry[testResults.bottomNeighbor.j].readings--;
+              SS2K_LOG(POWERTABLE_LOG_TAG, "PT failed Left (%d)(%d)(%d), readings (%d)", testResults.bottomNeighbor.i, testResults.bottomNeighbor.j, testResults.bottomNeighbor.targetPosition,
+               this->tableRow[testResults.bottomNeighbor.i].tableEntry[testResults.bottomNeighbor.j].readings);
+      }
     }
     return;
   }
+
+  /*
+  // Downvote out of position neighbors and discard entry if it doesn't match the logic of the table
+TestResults testResults = this->testNeighbors(k, i, targetPosition);
+if (!(testResults.bottomNeighbor.passedTest && testResults.topNeighbor.passedTest && testResults.rightNeighbor.passedTest && testResults.leftNeighbor.passedTest)) {
+  
+  // Check the failed neighbors
+  if (!testResults.leftNeighbor.passedTest) {
+    if (testResults.leftNeighbor.cad == cad && abs(testResults.leftNeighbor.targetPosition - targetPosition) <= 5) {
+      // If cadence is the same and targetPosition is within a 5-unit range, average the positions
+      this->tableRow[testResults.leftNeighbor.i].tableEntry[testResults.leftNeighbor.j].targetPosition = 
+        (testResults.leftNeighbor.targetPosition + targetPosition) / 2.0;
+      SS2K_LOG(POWERTABLE_LOG_TAG, "PT Left Neighbor Fixed (%d)(%d)(%f), averaged with current position (%f)", 
+               testResults.leftNeighbor.i, testResults.leftNeighbor.j, 
+               this->tableRow[testResults.leftNeighbor.i].tableEntry[testResults.leftNeighbor.j].targetPosition, targetPosition);
+    } else {
+      // If not within range, downvote the left neighbor
+      this->tableRow[testResults.leftNeighbor.i].tableEntry[testResults.leftNeighbor.j].readings--;
+      SS2K_LOG(POWERTABLE_LOG_TAG, "PT Left Neighbor Downvoted (%d)(%d)(%f), readings now (%d)", 
+               testResults.leftNeighbor.i, testResults.leftNeighbor.j, 
+               this->tableRow[testResults.leftNeighbor.i].tableEntry[testResults.leftNeighbor.j].targetPosition,
+               this->tableRow[testResults.leftNeighbor.i].tableEntry[testResults.leftNeighbor.j].readings);
+    }
+  }
+  
+  if (!testResults.rightNeighbor.passedTest) {
+    if (testResults.rightNeighbor.cad == cad && abs(testResults.rightNeighbor.targetPosition - targetPosition) <= 5) {
+      // If cadence is the same and targetPosition is within a 5-unit range, average the positions
+      this->tableRow[testResults.rightNeighbor.i].tableEntry[testResults.rightNeighbor.j].targetPosition = 
+        (testResults.rightNeighbor.targetPosition + targetPosition) / 2.0;
+      SS2K_LOG(POWERTABLE_LOG_TAG, "PT Right Neighbor Fixed (%d)(%d)(%f), averaged with current position (%f)", 
+               testResults.rightNeighbor.i, testResults.rightNeighbor.j, 
+               this->tableRow[testResults.rightNeighbor.i].tableEntry[testResults.rightNeighbor.j].targetPosition, targetPosition);
+    } else {
+      // If not within range, downvote the right neighbor
+      this->tableRow[testResults.rightNeighbor.i].tableEntry[testResults.rightNeighbor.j].readings--;
+      SS2K_LOG(POWERTABLE_LOG_TAG, "PT Right Neighbor Downvoted (%d)(%d)(%f), readings now (%d)", 
+               testResults.rightNeighbor.i, testResults.rightNeighbor.j, 
+               this->tableRow[testResults.rightNeighbor.i].tableEntry[testResults.rightNeighbor.j].targetPosition,
+               this->tableRow[testResults.rightNeighbor.i].tableEntry[testResults.rightNeighbor.j].readings);
+    }
+  }
+  
+  if (!testResults.topNeighbor.passedTest) {
+    if (testResults.topNeighbor.cad == cad && abs(testResults.topNeighbor.targetPosition - targetPosition) <= 5) {
+      // If cadence is the same and targetPosition is within a 5-unit range, average the positions
+      this->tableRow[testResults.topNeighbor.i].tableEntry[testResults.topNeighbor.j].targetPosition = 
+        (testResults.topNeighbor.targetPosition + targetPosition) / 2.0;
+      SS2K_LOG(POWERTABLE_LOG_TAG, "PT Top Neighbor Fixed (%d)(%d)(%f), averaged with current position (%f)", 
+               testResults.topNeighbor.i, testResults.topNeighbor.j, 
+               this->tableRow[testResults.topNeighbor.i].tableEntry[testResults.topNeighbor.j].targetPosition, targetPosition);
+    } else {
+      // If not within range, downvote the top neighbor
+      this->tableRow[testResults.topNeighbor.i].tableEntry[testResults.topNeighbor.j].readings--;
+      SS2K_LOG(POWERTABLE_LOG_TAG, "PT Top Neighbor Downvoted (%d)(%d)(%f), readings now (%d)", 
+               testResults.topNeighbor.i, testResults.topNeighbor.j, 
+               this->tableRow[testResults.topNeighbor.i].tableEntry[testResults.topNeighbor.j].targetPosition,
+               this->tableRow[testResults.topNeighbor.i].tableEntry[testResults.topNeighbor.j].readings);
+    }
+  }
+
+  if (!testResults.bottomNeighbor.passedTest) {
+    if (testResults.bottomNeighbor.cad == cad && abs(testResults.bottomNeighbor.targetPosition - targetPosition) <= 5) {
+      // If cadence is the same and targetPosition is within a 5-unit range, average the positions
+      this->tableRow[testResults.bottomNeighbor.i].tableEntry[testResults.bottomNeighbor.j].targetPosition = 
+        (testResults.bottomNeighbor.targetPosition + targetPosition) / 2.0;
+      SS2K_LOG(POWERTABLE_LOG_TAG, "PT Bottom Neighbor Fixed (%d)(%d)(%f), averaged with current position (%f)", 
+               testResults.bottomNeighbor.i, testResults.bottomNeighbor.j, 
+               this->tableRow[testResults.bottomNeighbor.i].tableEntry[testResults.bottomNeighbor.j].targetPosition, targetPosition);
+    } else {
+      // If not within range, downvote the bottom neighbor
+      this->tableRow[testResults.bottomNeighbor.i].tableEntry[testResults.bottomNeighbor.j].readings--;
+      SS2K_LOG(POWERTABLE_LOG_TAG, "PT Bottom Neighbor Downvoted (%d)(%d)(%f), readings now (%d)", 
+               testResults.bottomNeighbor.i, testResults.bottomNeighbor.j, 
+               this->tableRow[testResults.bottomNeighbor.i].tableEntry[testResults.bottomNeighbor.j].targetPosition,
+               this->tableRow[testResults.bottomNeighbor.i].tableEntry[testResults.bottomNeighbor.j].readings);
+    }
+  }
+
+  // If none of the neighbors could be fixed, return without modifying the table
+  return;
+}s
+  */
 
   // Update or create a new entry
   if (this->tableRow[k].tableEntry[i].readings == 0) {  // if first reading in this entry
@@ -832,6 +954,7 @@ void PowerTable::newEntry(PowerBuffer& powerBuffer) {
     }
   }
   this->tableRow[k].tableEntry[i].readings++;
+
   // Attempt to fill the table with calculated data...
   if (this->getNumEntries() > 4) {
     int entries    = 0;
