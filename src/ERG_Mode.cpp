@@ -797,18 +797,18 @@ void PowerTable::newEntry(PowerBuffer& powerBuffer) {
   if (!(testResults.bottomNeighbor.passedTest && testResults.topNeighbor.passedTest && testResults.rightNeighbor.passedTest && testResults.leftNeighbor.passedTest)) {
     // test which bit fields didn't match
     if (!testResults.leftNeighbor.passedTest) {
-      if(testResults.leftNeighbor.i == k && (testResults.leftNeighbor.targetPosition <= targetPosition+5 && testResults.leftNeighbor.targetPosition >= targetPosition)){ //check if the cadence is the same and positions are within a set range 
+      if(testResults.leftNeighbor.i == k && (testResults.leftNeighbor.targetPosition <= targetPosition+30 && testResults.leftNeighbor.targetPosition >= targetPosition)){ //check if the cadence is the same and positions are within a set range 
       SS2K_LOG(POWERTABLE_LOG_TAG, "Cadence is the same and targetPosition is within range"); 
-        float avgPosition = (targetPosition + float(testResults.leftNeighbor.targetPosition)) / 2.0f; //calculate the average 
-        SS2K_LOG(POWERTABLE_LOG_TAG, "Avg position: %f", avgPosition);
+        int avgPosition = (targetPosition + testResults.leftNeighbor.targetPosition) / 2; //calculate the average 
+        SS2K_LOG(POWERTABLE_LOG_TAG, "Avg position: %d", avgPosition);
         if(this->testNeighbors(k, i, avgPosition).allNeighborsPassed){ //check if that new avg position with the current cad and watts passes 
-          float leftValue = avgPosition; //store the value
-          SS2K_LOG(POWERTABLE_LOG_TAG, "Avg Position was successfull! New targetPosition: %f", leftValue); 
+          int leftValue = avgPosition; //store the value
+          SS2K_LOG(POWERTABLE_LOG_TAG, "Avg Position was successfull! New targetPosition: %d", leftValue); 
           this->enterData(k, i, leftValue); //enter the data 
         }else {
-          this->tableRow[testResults.leftNeighbor.i].tableEntry[testResults.leftNeighbor.j].readings--;
-          SS2K_LOG(POWERTABLE_LOG_TAG, "PT failed Left with Avg Position (%d)(%d)(%f), readings (%d)", testResults.leftNeighbor.i, testResults.leftNeighbor.j, avgPosition,
-          this->tableRow[testResults.leftNeighbor.i].tableEntry[testResults.leftNeighbor.j].readings);
+          this->tableRow[k].tableEntry[i].readings--;
+          SS2K_LOG(POWERTABLE_LOG_TAG, "PT failed Left with Avg Position (%d)(%d)(%d), readings (%d)", k, i, avgPosition,
+          this->tableRow[k].tableEntry[i].readings);
         }
       }
       else { //if not we still get rid of the reading 
@@ -819,17 +819,17 @@ void PowerTable::newEntry(PowerBuffer& powerBuffer) {
     }
 
     if (!testResults.rightNeighbor.passedTest) {
-      if(testResults.rightNeighbor.i == k && (testResults.rightNeighbor.targetPosition >= targetPosition-5 && testResults.rightNeighbor.targetPosition <= targetPosition)){
-        float avgPosition = (targetPosition + float(testResults.rightNeighbor.targetPosition)) / 2.0f; 
-        SS2K_LOG(POWERTABLE_LOG_TAG, "Avg position: %f", avgPosition);
+      if(testResults.rightNeighbor.i == k && (testResults.rightNeighbor.targetPosition >= targetPosition-30 && testResults.rightNeighbor.targetPosition <= targetPosition)){
+        int avgPosition = (targetPosition + testResults.rightNeighbor.targetPosition) / 2; 
+        SS2K_LOG(POWERTABLE_LOG_TAG, "Avg position: %d", avgPosition);
         if (this->testNeighbors(k, i, avgPosition).allNeighborsPassed){
-          float rightValue = avgPosition; 
-          SS2K_LOG(POWERTABLE_LOG_TAG, "Avg Position was successfull! New targetPosition: %f", rightValue); 
+          int rightValue = avgPosition; 
+          SS2K_LOG(POWERTABLE_LOG_TAG, "Avg Position was successfull! New targetPosition: %d", rightValue); 
           this->enterData(k, i, rightValue); 
         }else {
-           this->tableRow[testResults.rightNeighbor.i].tableEntry[testResults.rightNeighbor.j].readings--;
-      SS2K_LOG(POWERTABLE_LOG_TAG, "PT failed Right with Avg position (%d)(%d)(%f), readings (%d)", testResults.rightNeighbor.i, testResults.rightNeighbor.j,
-               avgPosition, this->tableRow[testResults.rightNeighbor.i].tableEntry[testResults.rightNeighbor.j].readings);
+           this->tableRow[k].tableEntry[i].readings--;
+      SS2K_LOG(POWERTABLE_LOG_TAG, "PT failed Right with Avg position (%d)(%d)(%d), readings (%d)", k, i,
+               avgPosition, this->tableRow[k].tableEntry[i].readings);
         }
       }
       else {
@@ -840,17 +840,17 @@ void PowerTable::newEntry(PowerBuffer& powerBuffer) {
     }
 
     if (!testResults.topNeighbor.passedTest) {
-       if(testResults.topNeighbor.j == i && (testResults.topNeighbor.targetPosition >= targetPosition-5 && testResults.topNeighbor.targetPosition <= targetPosition)){
-        float avgPosition = (targetPosition + float(testResults.topNeighbor.targetPosition)) / 2.0f; 
-        SS2K_LOG(POWERTABLE_LOG_TAG, "Avg position: %f", avgPosition);
+       if(testResults.topNeighbor.j == i && (testResults.topNeighbor.targetPosition >= targetPosition-30 && testResults.topNeighbor.targetPosition <= targetPosition)){
+        int avgPosition = (targetPosition + testResults.topNeighbor.targetPosition) / 2; 
+        SS2K_LOG(POWERTABLE_LOG_TAG, "Avg position: %d", avgPosition);
         if (this->testNeighbors(k, i, avgPosition).allNeighborsPassed){
-          float topValue = avgPosition; 
-          SS2K_LOG(POWERTABLE_LOG_TAG, "Avg Position was successfull! New targetPosition: %f", topValue);   
+          int topValue = avgPosition; 
+          SS2K_LOG(POWERTABLE_LOG_TAG, "Avg Position was successfull! New targetPosition: %d", topValue);   
           this->enterData(k, i, topValue); 
         }else {
-          this->tableRow[testResults.bottomNeighbor.i].tableEntry[testResults.bottomNeighbor.j].readings--;
-          SS2K_LOG(POWERTABLE_LOG_TAG, "PT failed Bottom with avg Position(%d)(%d)(%f), readings (%d)", testResults.bottomNeighbor.i, testResults.bottomNeighbor.j,
-          avgPosition, this->tableRow[testResults.bottomNeighbor.i].tableEntry[testResults.bottomNeighbor.j].readings);
+          this->tableRow[k].tableEntry[i].readings--;
+      SS2K_LOG(POWERTABLE_LOG_TAG, "PT failed Right with Avg position (%d)(%d)(%d), readings (%d)", k, i,
+               avgPosition, this->tableRow[k].tableEntry[i].readings);
         }
       }
       else{
@@ -861,17 +861,17 @@ void PowerTable::newEntry(PowerBuffer& powerBuffer) {
     }
 
     if (!testResults.bottomNeighbor.passedTest) {
-      if(testResults.bottomNeighbor.j == i && (testResults.bottomNeighbor.targetPosition <= targetPosition+5 && testResults.bottomNeighbor.targetPosition >= targetPosition)){
-        float avgPosition = (targetPosition + float(testResults.bottomNeighbor.targetPosition)) / 2.0f; 
-        SS2K_LOG(POWERTABLE_LOG_TAG, "Avg position: %f", avgPosition);
+      if(testResults.bottomNeighbor.j == i && (testResults.bottomNeighbor.targetPosition <= targetPosition+30 && testResults.bottomNeighbor.targetPosition >= targetPosition)){
+        int avgPosition = (targetPosition + testResults.bottomNeighbor.targetPosition) / 2; 
+        SS2K_LOG(POWERTABLE_LOG_TAG, "Avg position: %d", avgPosition);
         if (this->testNeighbors(k, i, avgPosition).allNeighborsPassed){
-          float bottomValue = avgPosition; 
-          SS2K_LOG(POWERTABLE_LOG_TAG, "Avg Position was successfull! New targetPosition: %f", bottomValue);
+          int bottomValue = avgPosition; 
+          SS2K_LOG(POWERTABLE_LOG_TAG, "Avg Position was successfull! New targetPosition: %d", bottomValue);
           this->enterData(k, i, bottomValue);  
         }else {
-           this->tableRow[testResults.bottomNeighbor.i].tableEntry[testResults.bottomNeighbor.j].readings--;
-      SS2K_LOG(POWERTABLE_LOG_TAG, "PT failed Bottom with avg position(%d)(%d)(%f), readings (%d)", testResults.bottomNeighbor.i, testResults.bottomNeighbor.j,
-               avgPosition, this->tableRow[testResults.bottomNeighbor.i].tableEntry[testResults.bottomNeighbor.j].readings);
+          this->tableRow[k].tableEntry[i].readings--;
+          SS2K_LOG(POWERTABLE_LOG_TAG, "PT failed Right with Avg position (%d)(%d)(%d), readings (%d)", k, i,
+                   avgPosition, this->tableRow[k].tableEntry[i].readings);
         }
       }
       else {
@@ -915,7 +915,7 @@ void PowerTable::newEntry(PowerBuffer& powerBuffer) {
   BLE_ss2kCustomCharacteristic::notify(0x27, k);
 }
 
-void PowerTable::enterData(int i, int j, float pos){
+void PowerTable::enterData(int i, int j, int pos){
    // Update or create a new entry
   if (this->tableRow[i].tableEntry[j].readings == 0) {  // if first reading in this entry
     this->tableRow[i].tableEntry[j].targetPosition = pos;
