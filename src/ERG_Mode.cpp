@@ -797,7 +797,7 @@ void PowerTable::newEntry(PowerBuffer& powerBuffer) {
   if (!(testResults.bottomNeighbor.passedTest && testResults.topNeighbor.passedTest && testResults.rightNeighbor.passedTest && testResults.leftNeighbor.passedTest)) {
     // test which bit fields didn't match
     if (!testResults.leftNeighbor.passedTest) {
-      if(testResults.leftNeighbor.i == k && (testResults.leftNeighbor.targetPosition+5 >= targetPosition && testResults.leftNeighbor.targetPosition-5 <= targetPosition)){ //check if the cadence is the same and positions are within a set range 
+      if(testResults.leftNeighbor.i == k && (testResults.leftNeighbor.targetPosition <= targetPosition+5 && testResults.leftNeighbor.targetPosition >= targetPosition)){ //check if the cadence is the same and positions are within a set range 
       SS2K_LOG(POWERTABLE_LOG_TAG, "Cadence is the same and targetPosition is within range"); 
         float avgPosition = (targetPosition + float(testResults.leftNeighbor.targetPosition)) / 2.0f; //calculate the average 
         SS2K_LOG(POWERTABLE_LOG_TAG, "Avg position: %f", avgPosition);
@@ -819,7 +819,7 @@ void PowerTable::newEntry(PowerBuffer& powerBuffer) {
     }
 
     if (!testResults.rightNeighbor.passedTest) {
-      if(testResults.rightNeighbor.i == k && (testResults.rightNeighbor.targetPosition+5 >= targetPosition && testResults.rightNeighbor.targetPosition-5 <= targetPosition)){
+      if(testResults.rightNeighbor.i == k && (testResults.rightNeighbor.targetPosition >= targetPosition-5 && testResults.rightNeighbor.targetPosition <= targetPosition)){
         float avgPosition = (targetPosition + float(testResults.rightNeighbor.targetPosition)) / 2.0f; 
         SS2K_LOG(POWERTABLE_LOG_TAG, "Avg position: %f", avgPosition);
         if (this->testNeighbors(k, i, avgPosition).allNeighborsPassed){
@@ -840,7 +840,7 @@ void PowerTable::newEntry(PowerBuffer& powerBuffer) {
     }
 
     if (!testResults.topNeighbor.passedTest) {
-       if(testResults.topNeighbor.j == i && (testResults.topNeighbor.targetPosition+5 >= targetPosition && testResults.topNeighbor.targetPosition-5 <= targetPosition)){
+       if(testResults.topNeighbor.j == i && (testResults.topNeighbor.targetPosition >= targetPosition-5 && testResults.topNeighbor.targetPosition <= targetPosition)){
         float avgPosition = (targetPosition + float(testResults.topNeighbor.targetPosition)) / 2.0f; 
         SS2K_LOG(POWERTABLE_LOG_TAG, "Avg position: %f", avgPosition);
         if (this->testNeighbors(k, i, avgPosition).allNeighborsPassed){
@@ -861,7 +861,7 @@ void PowerTable::newEntry(PowerBuffer& powerBuffer) {
     }
 
     if (!testResults.bottomNeighbor.passedTest) {
-      if(testResults.bottomNeighbor.j == i && (testResults.bottomNeighbor.targetPosition+5 >= targetPosition && testResults.bottomNeighbor.targetPosition-5 <= targetPosition)){
+      if(testResults.bottomNeighbor.j == i && (testResults.bottomNeighbor.targetPosition <= targetPosition+5 && testResults.bottomNeighbor.targetPosition >= targetPosition)){
         float avgPosition = (targetPosition + float(testResults.bottomNeighbor.targetPosition)) / 2.0f; 
         SS2K_LOG(POWERTABLE_LOG_TAG, "Avg position: %f", avgPosition);
         if (this->testNeighbors(k, i, avgPosition).allNeighborsPassed){
