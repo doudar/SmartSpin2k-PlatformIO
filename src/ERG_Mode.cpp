@@ -830,7 +830,7 @@ void PowerTable::newEntry(PowerBuffer& powerBuffer) {
       if(testResults.rightNeighbor.i == k && (testResults.rightNeighbor.targetPosition >= targetPosition-30 && testResults.rightNeighbor.targetPosition <= targetPosition)){
         SS2K_LOG(POWERTABLE_LOG_TAG, "Cadence is the same and target pos is within range");
         int avgPosition = (targetPosition + testResults.rightNeighbor.targetPosition) / 2; 
-        int newValue = targetPosition - (avgPosition - targetPosition); //this is the possible new value for the neighbor 
+        int newValue = targetPosition + (avgPosition - targetPosition); //this is the possible new value for the neighbor 
         SS2K_LOG(POWERTABLE_LOG_TAG, "Avg position: %d", avgPosition);
         if (this->testNeighbors(k, i, avgPosition).allNeighborsPassed){
           int rightValue = avgPosition; 
@@ -860,7 +860,7 @@ void PowerTable::newEntry(PowerBuffer& powerBuffer) {
        if(testResults.topNeighbor.j == i && (testResults.topNeighbor.targetPosition >= targetPosition-30 && testResults.topNeighbor.targetPosition <= targetPosition)){
         SS2K_LOG(POWERTABLE_LOG_TAG, "Cadence is the same and target pos is within range");
         int avgPosition = (targetPosition + testResults.topNeighbor.targetPosition) / 2; 
-        int newValue = targetPosition - (avgPosition - targetPosition); //this is the possible new value for the neighbor 
+        int newValue = targetPosition + (avgPosition - targetPosition); //this is the possible new value for the neighbor 
         SS2K_LOG(POWERTABLE_LOG_TAG, "Avg position: %d", avgPosition);
         if (this->testNeighbors(k, i, avgPosition).allNeighborsPassed){
           int topValue = avgPosition; 
