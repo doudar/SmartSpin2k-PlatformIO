@@ -85,7 +85,7 @@ void PowerBuffer::set(int i) {
   this->powerEntry[i].readings++;
   this->powerEntry[i].watts          = rtConfig->watts.getValue();
   this->powerEntry[i].cad            = rtConfig->cad.getValue();
-  this->powerEntry[i].targetPosition = ss2k->getCurrentPosition() / 100;  // dividing by 100 to save memory.
+  this->powerEntry[i].targetPosition = ss2k->getCurrentPosition() / TABLE_DIVISOR;  // dividing by 10 to save memory.
 }
 
 void PowerBuffer::reset() {
@@ -225,7 +225,7 @@ int32_t PowerTable::lookup(int watts, int cad) {
         int val2          = this->tableRow[extrapRow2].tableEntry[wattIndex].targetPosition;
         extrapolatedValue = val1 + (val2 - val1) * (cad - cad1) / (cad2 - cad1);
         SS2K_LOG(ERG_MODE_LOG_TAG, "Lookup Extrapolated %d from %d, %d, for %dw %dcad", extrapolatedValue, val2, val1, watts, cad);
-        return extrapolatedValue * 100;
+        return extrapolatedValue * TABLE_DIVISOR;
       }
     }
 
@@ -249,7 +249,7 @@ int32_t PowerTable::lookup(int watts, int cad) {
         int val2          = this->tableRow[cadIndex].tableEntry[extrapCol2].targetPosition;
         extrapolatedValue = val1 + (val2 - val1) * (watts - watts1) / (watts2 - watts1);
         SS2K_LOG(ERG_MODE_LOG_TAG, "Lookup Extrapolated %d from %d, %d, for %dw %dcad", extrapolatedValue, val2, val1, watts, cad);
-        return extrapolatedValue * 100;
+        return extrapolatedValue * TABLE_DIVISOR;
       }
     }
     // Not enough data.
@@ -311,7 +311,7 @@ int32_t PowerTable::lookup(int watts, int cad) {
     return INT16_MIN;
   }
 
-  int ret = (sum / count) * 100;
+  int ret = (sum / count) * TABLE_DIVISOR;
   SS2K_LOG(ERG_MODE_LOG_TAG, "Lookup result: %dw %dcad %d", watts, cad, ret);
   return ret;
 }
@@ -1104,7 +1104,7 @@ void ErgMode::computeResistance() {
 
   int actualDelta = rtConfig->resistance.getTarget() - rtConfig->resistance.getValue();
   if (actualDelta != 0) {
-    rtConfig->setTargetIncline(rtConfig->getTargetIncline() + (100 * actualDelta));
+    rtConfig->setTargetIncline(rtConfig->getTargetIncline() + (TABLE_DIVISOR * actualDelta));
   } else {
     rtConfig->setTargetIncline(ss2k->getCurrentPosition());
   }
@@ -1204,7 +1204,7 @@ void ErgMode::_updateValues(int newCadence, Measurement& newWatts, float newIncl
 
 bool ErgMode::_userIsSpinning(int cadence, float incline) {
   if (cadence <= MIN_ERG_CADENCE) {
-    if (!this->engineStopped) {                               // Test so motor stop command only happens once.                                    // release tension
+    if (!this->engineStopped) {       // Test so motor stop command only happens once.                                    // release tension
       rtConfig->setTargetIncline(0);  // release incline
       this->engineStopped = true;
     }
