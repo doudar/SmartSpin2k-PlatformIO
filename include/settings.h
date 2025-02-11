@@ -275,10 +275,10 @@ const char* const DEFAULT_PASSWORD = "password";
 #define POWER_SAMPLES 5
 
 // Max downvotes that a neighbor can have
-#define MAX_NEIGHBOR_WEIGHT
+#define MAX_NEIGHBOR_WEIGHT 2 * POWER_SAMPLES
 
 // Min downvotes that a neighbor can have
-#define MIN_NEIGHBOR_WEIGHT
+#define MIN_NEIGHBOR_WEIGHT 0
 
 // How often in ms to save the power table if no new data is added and user is pedaling.
 #define POWER_TABLE_SAVE_INTERVAL 240000
