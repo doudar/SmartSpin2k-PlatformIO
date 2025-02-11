@@ -274,6 +274,12 @@ const char* const DEFAULT_PASSWORD = "password";
 // Number of similar power samples to take before writing to the Power Table
 #define POWER_SAMPLES 5
 
+// Max downvotes that a neighbor can have
+#define MAX_NEIGHBOR_WEIGHT
+
+// Min downvotes that a neighbor can have
+#define MIN_NEIGHBOR_WEIGHT
+
 // How often in ms to save the power table if no new data is added and user is pedaling.
 #define POWER_TABLE_SAVE_INTERVAL 240000
 
@@ -317,6 +323,9 @@ const char* const DEFAULT_PASSWORD = "password";
 // Task Stack Sizes
 #define MAIN_STACK       6500
 #define BLE_CLIENT_STACK 6000
+
+// Limit table size to save memory
+#define TABLE_DIVISOR 10
 
 // Uncomment to enable stack size debugging info
 // #define DEBUG_STACK
