@@ -15,6 +15,7 @@
 #include "BLE_Custom_Characteristic.h"
 #include "BLE_Device_Information_Service.h"
 #include "BLE_Wattbike_Service.h"
+#include "BLE_SB20_Service.h"
 
 #include <ArduinoJson.h>
 #include <Constants.h>
@@ -34,6 +35,7 @@ BLE_Fitness_Machine_Service fitnessMachineService;
 BLE_ss2kCustomCharacteristic ss2kCustomCharacteristic;
 BLE_Device_Information_Service deviceInformationService;
 BLE_Wattbike_Service wattbikeService;
+//BLE_SB20_Service sb20Service;
 
 void startBLEServer() {
   // Server Setup
@@ -51,6 +53,7 @@ void startBLEServer() {
   ss2kCustomCharacteristic.setupService(spinBLEServer.pServer);
   deviceInformationService.setupService(spinBLEServer.pServer);
   wattbikeService.setupService(spinBLEServer.pServer);  // No callback needed
+  //sb20Service.begin();
   BLEFirmwareSetup();
   
   // const std::string fitnessData = {0b00000001, 0b00100000, 0b00000000};
@@ -73,6 +76,7 @@ void SpinBLEServer::update() {
   cyclingSpeedCadenceService.update();
   fitnessMachineService.update();
   wattbikeService.parseNemit();  // Changed from update() to parseNemit()
+  ///sb20Service.notify();
 }
 
 double SpinBLEServer::calculateSpeed() {
