@@ -735,6 +735,10 @@ int downVote(int targetValue, int neighborValue) {
   int delta = abs(targetValue - neighborValue);
   float penalty;
   float penaltyFactor = 0.2;
+
+  // currently consistently getting a 0 for neighbor value...
+  SS2K_LOG(POWERTABLE_LOG_TAG, "WEIGHTED DOWNVOTING: Target Value: (%d), NeighborValue: (%f)", targetValue, neighborValue);
+
   // we have a few different options for penalty calculations here, will need to test which works best:
 
   // linear function, low agression
@@ -754,6 +758,7 @@ int downVote(int targetValue, int neighborValue) {
   // round up penalty to make it an int
   penalty = round(penalty);
 
+  SS2K_LOG(POWERTABLE_LOG_TAG, "WEIGHTED DOWNVOTING: Delta: (%d), Penalty: (%f)", delta, penalty);
   return penalty;
 }
 
