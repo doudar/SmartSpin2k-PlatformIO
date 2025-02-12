@@ -58,7 +58,7 @@ void _APSetup() {
   //WiFi.setHostname(userConfig->getDeviceName());
   WiFi.softAPsetHostname(userConfig->getDeviceName());
   WiFi.enableAP(true);
-  vTaskDelay(500);  // Micro controller requires some time to reset the mode
+  vTaskDelay(500/portTICK_RATE_MS);  // Micro controller requires some time to reset the mode
 }
 
 // ********************************WIFI Setup*************************
@@ -104,7 +104,7 @@ void startWifi() {
       SS2K_LOG(HTTP_SERVER_LOG_TAG, "Using Default Password");
       WiFi.softAP(userConfig->getDeviceName(), DEFAULT_PASSWORD);
     }
-    vTaskDelay(50);
+    vTaskDelay(50/portTICK_RATE_MS);
     myIP = WiFi.softAPIP();
     /* Setup the DNS server redirecting all the domains to the apIP */
     dnsServer.setErrorReplyCode(DNSReplyCode::NoError);

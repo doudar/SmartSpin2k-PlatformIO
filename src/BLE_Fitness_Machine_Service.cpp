@@ -19,7 +19,7 @@ BLE_Fitness_Machine_Service::BLE_Fitness_Machine_Service()
       fitnessMachineInclinationRange(nullptr),
       fitnessMachineTrainingStatus(nullptr) {}
 
-uint8_t ftmsTrainingStatus[2] = {0x08, 0x00};
+uint8_t ftmsTrainingStatus[2] = {0x00, 0x00};  // Initialize to Other state
 
 void BLE_Fitness_Machine_Service::setupService(NimBLEServer *pServer, MyCharacteristicCallbacks *chrCallbacks) {
   // Resistance, IPower, HeartRate
@@ -269,7 +269,7 @@ void BLE_Fitness_Machine_Service::processFTMSWrite() {
       ftmsTrainingStatus[1] = FitnessMachineTrainingStatus::Other;  // 0x00;
     }
     fitnessMachineStatusCharacteristic->setValue(ftmsStatus.data(), ftmsStatus.size());
-    SS2K_LOG(FMTS_SERVER_LOG_TAG, "Calling notify %s -> %02x %02x", fitnessMachineStatusCharacteristic->getUUID().toString().c_str(), ftmsStatus[0], ftmsStatus[1]);
+    //SS2K_LOG(FMTS_SERVER_LOG_TAG, "Calling notify %s -> %02x %02x", fitnessMachineStatusCharacteristic->getUUID().toString().c_str(), ftmsStatus[0], ftmsStatus[1]);
     std::string characteristicValue = pCharacteristic->getValue();
     std::string logValue;
     for (size_t i = 0; i < characteristicValue.length(); ++i) {
@@ -277,12 +277,17 @@ void BLE_Fitness_Machine_Service::processFTMSWrite() {
       snprintf(buf, sizeof(buf), "%02x ", (unsigned char)characteristicValue[i]);
       logValue += buf;
     }
-    SS2K_LOG(FMTS_SERVER_LOG_TAG, "Caling notify %s -> %s", pCharacteristic->getUUID().toString().c_str(), logValue.c_str());
+    SS2K_LOG(FMTS_SERVER_LOG_TAG, "Calling notify %s -> %s", pCharacteristic->getUUID().toString().c_str(), logValue.c_str());
     fitnessMachineControlPoint->setValue(returnValue, 3);
     fitnessMachineTrainingStatus->setValue(ftmsTrainingStatus, 2);
-    fitnessMachineControlPoint->notify();
-    //fitnessMachineTrainingStatus->notify();
-    //fitnessMachineStatusCharacteristic->notify();
+    fitnessMachineControlPoint->indicate();
+    // only notify if the value has changed
+    static uint8_t _lastTrainingStatus[2] = {0x00, 0x00};
+    if (memcmp(_lastTrainingStatus, ftmsTrainingStatus, 2) != 0) {
+      memcpy(_lastTrainingStatus, ftmsTrainingStatus, 2);
+      fitnessMachineTrainingStatus->notify();
+    }
+    fitnessMachineStatusCharacteristic->notify();
   }
 }
 

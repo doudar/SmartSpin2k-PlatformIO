@@ -193,7 +193,7 @@ void MyCharacteristicCallbacks::onStatus(NimBLECharacteristic* pCharacteristic, 
       logValue += buf;
     }
   
-  SS2K_LOG(BLE_SERVER_LOG_TAG, "Notification/Indication status code: %d for char: %s Data: %s",
+  SS2K_LOGW(BLE_SERVER_LOG_TAG, "Notification/Indication status code: %d for char: %s Data: %s",
            code, pCharacteristic->getUUID().toString().c_str(), logValue.c_str());
 }
 
