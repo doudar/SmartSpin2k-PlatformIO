@@ -12,6 +12,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 ### Hardware
+
+
+## [25.1.28]
+
+### Added
+
+### Changed
+
+### Hardware
 - Updated IC SE Insert to fit better.
 - Added Schwinn AC bike insert and mount.
 
