@@ -803,7 +803,7 @@ void PowerTable::newEntry(PowerBuffer& powerBuffer) {
         SS2K_LOG(POWERTABLE_LOG_TAG, "Avg position: %d", avgPosition);
 
         if(this->testNeighbors(testResults.leftNeighbor.i, testResults.leftNeighbor.j, targetPosition).allNeighborsPassed){ //check if the current position moved left is valid
-          SS2K_LOG(POWERTABLE_LOG_TAG, "Current Position moved left was valid! Current position: %d", targetPosition); 
+          SS2K_LOG(POWERTABLE_LOG_TAG, "Current Position moved left was valid! Current position: %f", targetPosition); 
           this->enterData(testResults.leftNeighbor.i, testResults.leftNeighbor.j, targetPosition); //enter the data 
         } 
 
@@ -832,7 +832,7 @@ void PowerTable::newEntry(PowerBuffer& powerBuffer) {
         SS2K_LOG(POWERTABLE_LOG_TAG, "Avg position: %d", avgPosition);
        
         if (this->testNeighbors(testResults.rightNeighbor.i, testResults.rightNeighbor.j, targetPosition).allNeighborsPassed){
-          SS2K_LOG(POWERTABLE_LOG_TAG, "Current Position moved right was valid! Current position: %d", targetPosition); 
+          SS2K_LOG(POWERTABLE_LOG_TAG, "Current Position moved right was valid! Current position: %f", targetPosition); 
           this->enterData(testResults.rightNeighbor.i, testResults.rightNeighbor.j, targetPosition); 
         } 
 
@@ -861,7 +861,7 @@ void PowerTable::newEntry(PowerBuffer& powerBuffer) {
         SS2K_LOG(POWERTABLE_LOG_TAG, "Avg position: %d", avgPosition);
 
         if (this->testNeighbors(testResults.topNeighbor.i, testResults.topNeighbor.j, targetPosition).allNeighborsPassed){
-          SS2K_LOG(POWERTABLE_LOG_TAG, "Current Position moved up was valid! Current position: %d", targetPosition); 
+          SS2K_LOG(POWERTABLE_LOG_TAG, "Current Position moved up was valid! Current position: %f", targetPosition); 
           this->enterData(testResults.topNeighbor.i, testResults.topNeighbor.j, targetPosition); 
         } 
 
@@ -890,7 +890,7 @@ void PowerTable::newEntry(PowerBuffer& powerBuffer) {
         SS2K_LOG(POWERTABLE_LOG_TAG, "Avg position: %d", avgPosition);
 
         if (this->testNeighbors(testResults.bottomNeighbor.i, testResults.bottomNeighbor.j, targetPosition).allNeighborsPassed){
-          SS2K_LOG(POWERTABLE_LOG_TAG, "Current Position moved up was valid! Current position: %d", targetPosition); 
+          SS2K_LOG(POWERTABLE_LOG_TAG, "Current Position moved up was valid! Current position: %f", targetPosition); 
           this->enterData(testResults.bottomNeighbor.i, testResults.bottomNeighbor.j, targetPosition);  
         } 
         
