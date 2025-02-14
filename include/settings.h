@@ -224,11 +224,11 @@ const char* const DEFAULT_PASSWORD = "password";
 
 // Name of default Power Meter. any connects to anything, none connects to
 // nothing.
-#define CONNECTED_POWER_METER "any"
+#define CONNECTED_POWER_METER "none"
 
 // Name of default heart monitor. any connects to anything, none connects to
 // nothing.
-#define CONNECTED_HEART_MONITOR "any"
+#define CONNECTED_HEART_MONITOR "none"
 
 // Name of default remote. any connects to anything, none connects to
 // nothing.
@@ -305,14 +305,14 @@ const char* const DEFAULT_PASSWORD = "password";
 // Interval for polling ble battery updates
 #define BATTERY_UPDATE_INTERVAL_MILLIS 300000
 
-// Initial and web scan duration.
-#define DEFAULT_SCAN_DURATION 5
+// Initial and web scan duration in milliseconds
+#define DEFAULT_SCAN_DURATION 5000
 
 // Default homing sensitivity value
 #define DEFAULT_HOMING_SENSITIVITY 50
 
-// BLE automatic reconnect duration. Set this low to avoid interruption.
-#define BLE_RECONNECT_SCAN_DURATION 5
+// BLE automatic reconnect duration in milliseconds. Set this low to avoid interruption. 
+#define BLE_RECONNECT_SCAN_DURATION 5000
 
 // Task Stack Sizes
 #define MAIN_STACK       6500
