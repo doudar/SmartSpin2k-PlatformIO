@@ -281,12 +281,12 @@ void BLE_Fitness_Machine_Service::processFTMSWrite() {
     fitnessMachineControlPoint->setValue(returnValue, 3);
     fitnessMachineTrainingStatus->setValue(ftmsTrainingStatus, 2);
     fitnessMachineControlPoint->indicate();
-    // only notify if the value has changed
+    /* only notify if the value has changed
     static uint8_t _lastTrainingStatus[2] = {0x00, 0x00};
     if (memcmp(_lastTrainingStatus, ftmsTrainingStatus, 2) != 0) {
       memcpy(_lastTrainingStatus, ftmsTrainingStatus, 2);
       fitnessMachineTrainingStatus->notify();
-    }
+    } */
     fitnessMachineStatusCharacteristic->notify();
   }
 }
