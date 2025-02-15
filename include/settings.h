@@ -302,6 +302,9 @@ const char* const DEFAULT_PASSWORD = "password";
 // Increase this value if the offset for the loaded table is inaccurate.
 #define MINIMUM_RELIABLE_POSITIONS 3
 
+// Limit power table size to save memory
+#define TABLE_DIVISOR 100.0
+
 // Temperature of the ESP32 at which to start reducing the power output of the stepper motor driver.
 #define THROTTLE_TEMP 90
 
@@ -332,9 +335,6 @@ const char* const DEFAULT_PASSWORD = "password";
 // Task Stack Sizes
 #define MAIN_STACK       6500
 #define BLE_CLIENT_STACK 6000
-
-// Limit table size to save memory
-#define TABLE_DIVISOR 10
 
 // Uncomment to enable stack size debugging info
 // #define DEBUG_STACK
