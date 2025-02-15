@@ -19,6 +19,7 @@
 class PowerEntry {
  public:
   int watts;
+  int resistance; 
   int32_t targetPosition;
   int cad;
   int readings;
@@ -28,6 +29,7 @@ class PowerEntry {
     this->targetPosition = 0;
     this->cad            = 0;
     this->readings       = 0;
+    this->resistance     = 0; 
   }
 };
 
@@ -103,6 +105,9 @@ class PowerTable {
 
   // Catalogs a new entry into the power table.
   void newEntry(PowerBuffer& powerBuffer);
+
+  // enters data into power table 
+  void enterData(int i, int j, int pos); 
 
   // returns incline for wattTarget. Null if not found.
   int32_t lookup(int watts, int cad);
