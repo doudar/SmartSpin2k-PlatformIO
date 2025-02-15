@@ -159,7 +159,7 @@ void PowerTable::processPowerValue(PowerBuffer& powerBuffer, int cadence,
       int totalStep = ((rtConfig->getMaxStep() - rtConfig->getMaxStep() / 2000000));  // stepper distance is 400,000,000 so dividing it by 2,000,000 gives us 200
       calcStep      = totalStep * 0.05;                                               // 5% of that would give us around a 10 positive and negative range
     } else if (rtConfig->getHomed()) {
-      int totalStep = (rtConfig->getMaxStep() / 100);  // maxStep should be around 22000 / 100 gives us 200ish
+      int totalStep = (rtConfig->getMaxStep() / TABLE_DIVISOR);  // maxStep should be around 22000 / TABLE_DIVISOR gives us 200ish
       calcStep      = totalStep * 0.05;                // 5% of that would give us around a 10 positive and negative range
     }
 
@@ -168,8 +168,8 @@ void PowerTable::processPowerValue(PowerBuffer& powerBuffer, int cadence,
       powerBuffer.set(0);
       // Check if the current stepper posistion is within a 5% range of the previous stepper position and that the current position is not negative
     }
-    if (((ss2k->getCurrentPosition() / 100) >= ((powerBuffer.powerEntry[0].targetPosition) - calcStep)) &&
-        ((ss2k->getCurrentPosition() / 100) <= ((powerBuffer.powerEntry[0].targetPosition) + calcStep))) {
+    if (((ss2k->getCurrentPosition() / TABLE_DIVISOR) >= ((powerBuffer.powerEntry[0].targetPosition) - calcStep)) &&
+        ((ss2k->getCurrentPosition() / TABLE_DIVISOR) <= ((powerBuffer.powerEntry[0].targetPosition) + calcStep))) {
       for (int i = 1; i < POWER_SAMPLES; i++) {
         if (powerBuffer.powerEntry[i].readings == 0) {
           SS2K_LOG(POWERTABLE_LOG_TAG, "Success!");
@@ -1256,8 +1256,8 @@ bool PowerTable::_save() {
 }
 
 int32_t PowerTable::lookupWatts(int cad, int32_t targetPosition) {
-  // Convert targetPosition from external format (x100) to internal format
-  int16_t internalPosition = targetPosition / 100;
+  // Convert targetPosition from external format (xTABLE_DIVISOR) to internal format
+  int16_t internalPosition = targetPosition / TABLE_DIVISOR;
 
   // Calculate cadence index
   int cadIndex = round(((float)cad - (float)MINIMUM_TABLE_CAD) / (float)POWERTABLE_CAD_INCREMENT);
