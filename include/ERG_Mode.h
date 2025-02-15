@@ -44,6 +44,7 @@ class TableEntry {
  public:
   int16_t targetPosition;
   int8_t readings;
+
   TableEntry() {
     this->targetPosition = INT16_MIN;
     this->readings       = 0;
