@@ -29,6 +29,7 @@ void PowerTable::runERG() {
   static bool hasConnectedPowerMeter = false;
   static bool simulationRunning      = false;
   static int loopCounter             = 0;
+  static bool pTabUsed4Pwr           = false;
 
   if ((millis() - ergTimer) > ERG_MODE_DELAY) {
     // reset the timer.
@@ -41,6 +42,42 @@ void PowerTable::runERG() {
       return;
     }
 
+    static unsigned long int saveFlagCooldown = 0;
+    // save powertable if saveFlag has been set for 10 seconds using a saveFlagCooldown timer
+    // this is to provide enough time to transmit a new powerTable using BLE.
+    if (this->saveFlag) {
+      if (saveFlagCooldown == 0) {
+        saveFlagCooldown = millis();
+      }
+      if ((millis() - saveFlagCooldown) > 10000) {
+        this->_save();
+        saveFlagCooldown = 0;
+        saveFlag         = false;
+      }
+    }
+
+    // values hard set for testing:
+    // userConfig->setPTab4Pwr(true);
+    // rtConfig->setHomed(true);
+
+    if ((!spinBLEClient.connectedPM || userConfig->getPTab4Pwr()) && rtConfig->cad.getValue() && rtConfig->getHomed()) {
+      // Lookup watts using the Power Table.
+      pTabUsed4Pwr = true;
+      if (this->_hasBeenLoadedThisSession) {
+        rtConfig->watts.setValue(lookupWatts(rtConfig->cad.getValue(), ss2k->getCurrentPosition()));
+      } else {
+        // only run _manageSaveState every 5 seconds
+        static unsigned long int saveStateTimer = millis();
+        if ((millis() - saveStateTimer) > 5000) {
+          //load the power table, true to skip checks. 
+          this->_manageSaveState(true);
+          saveStateTimer = millis();
+        }
+      }
+    } else {
+      pTabUsed4Pwr = false;
+    }
+
     if (rtConfig->cad.getValue() > 0 && rtConfig->watts.getValue() > 0) {
       hasConnectedPowerMeter = spinBLEClient.connectedPM;
       simulationRunning      = rtConfig->watts.getTarget();
@@ -48,8 +85,10 @@ void PowerTable::runERG() {
         simulationRunning = rtConfig->watts.getSimulate();
       }
 
-      // add values to torque table
-      powerTable->processPowerValue(powerBuffer, rtConfig->cad.getValue(), rtConfig->watts);
+      if (!pTabUsed4Pwr) {
+        // add values to Power table
+        powerTable->processPowerValue(powerBuffer, rtConfig->cad.getValue(), rtConfig->watts);
+      }
 
       // compute ERG
       if ((rtConfig->getFTMSMode() == FitnessMachineControlPointProcedure::SetTargetPower) && (hasConnectedPowerMeter || simulationRunning)) {
@@ -836,7 +875,7 @@ void PowerTable::newEntry(PowerBuffer& powerBuffer) {
   BLE_ss2kCustomCharacteristic::notify(0x27, k);
 }
 
-bool PowerTable::_manageSaveState() {
+bool PowerTable::_manageSaveState(bool canSkipReliabilityChecks) {
   // Check if the table has been loaded in this session
   if (!this->_hasBeenLoadedThisSession) {
     SS2K_LOG(POWERTABLE_LOG_TAG, "Loading Power Table....");
@@ -856,6 +895,11 @@ bool PowerTable::_manageSaveState() {
     bool savedHomed;
     file.read((uint8_t*)&savedHomed, sizeof(savedHomed));
 
+    // If both current and saved tables were created with homing, we can skip position reliability checks
+    if (!canSkipReliabilityChecks) {
+      canSkipReliabilityChecks = savedHomed && rtConfig->getHomed();
+    }
+
     if (version != TABLE_VERSION) {
       SS2K_LOG(POWERTABLE_LOG_TAG, "Expected power table version %d, found version %d", TABLE_VERSION, version);
       file.close();
@@ -872,9 +916,6 @@ bool PowerTable::_manageSaveState() {
     }
 
     SS2K_LOG(POWERTABLE_LOG_TAG, "Loading power table version %d, Size %d, Homed %d", version, savedQuality, savedHomed);
-
-    // If both current and saved tables were created with homing, we can skip position reliability checks
-    bool canSkipReliabilityChecks = savedHomed && rtConfig->getHomed();
 
     if (!canSkipReliabilityChecks) {
       // Initialize a counter for reliable positions
@@ -1017,6 +1058,77 @@ bool PowerTable::_save() {
   lastSaveTime                    = millis();
   this->_hasBeenLoadedThisSession = true;
   return true;  // return successful
+}
+
+int32_t PowerTable::lookupWatts(int cad, int32_t targetPosition) {
+  // Convert targetPosition from external format (x100) to internal format
+  int16_t internalPosition = targetPosition / 100;
+
+  // Calculate cadence index
+  int cadIndex = round(((float)cad - (float)MINIMUM_TABLE_CAD) / (float)POWERTABLE_CAD_INCREMENT);
+
+  // Clamp cadence index to table limits
+  if (cadIndex < 0) {
+    cadIndex = 0;
+  } else if (cadIndex >= POWERTABLE_CAD_SIZE) {
+    cadIndex = POWERTABLE_CAD_SIZE - 1;
+  }
+
+  // Find closest positions and corresponding watts in the row
+  int leftWattIndex  = -1;
+  int rightWattIndex = -1;
+
+  // Search for closest positions
+  for (int j = 0; j < POWERTABLE_WATT_SIZE; j++) {
+    if (this->tableRow[cadIndex].tableEntry[j].targetPosition != INT16_MIN) {
+      if (this->tableRow[cadIndex].tableEntry[j].targetPosition <= internalPosition) {
+        leftWattIndex = j;
+      } else {
+        rightWattIndex = j;
+        break;
+      }
+    }
+  }
+
+  // If we found valid positions on both sides, interpolate
+  if (leftWattIndex != -1 && rightWattIndex != -1) {
+    int leftPos    = this->tableRow[cadIndex].tableEntry[leftWattIndex].targetPosition;
+    int rightPos   = this->tableRow[cadIndex].tableEntry[rightWattIndex].targetPosition;
+    int leftWatts  = leftWattIndex * POWERTABLE_WATT_INCREMENT;
+    int rightWatts = rightWattIndex * POWERTABLE_WATT_INCREMENT;
+
+    // Linear interpolation
+    int watts = leftWatts + (rightWatts - leftWatts) * (internalPosition - leftPos) / (rightPos - leftPos);
+    SS2K_LOG(ERG_MODE_LOG_TAG, "LookupWatts interpolated %dw from pos %d, cad %d", watts, targetPosition, cad);
+    return watts;
+  }
+
+  // If we only found positions on one side, extrapolate
+  if (leftWattIndex != -1 && leftWattIndex > 0) {
+    // Extrapolate using two leftmost points
+    int pos1   = this->tableRow[cadIndex].tableEntry[leftWattIndex - 1].targetPosition;
+    int pos2   = this->tableRow[cadIndex].tableEntry[leftWattIndex].targetPosition;
+    int watts1 = (leftWattIndex - 1) * POWERTABLE_WATT_INCREMENT;
+    int watts2 = leftWattIndex * POWERTABLE_WATT_INCREMENT;
+
+    int watts = watts2 + (watts2 - watts1) * (internalPosition - pos2) / (pos2 - pos1);
+    SS2K_LOG(ERG_MODE_LOG_TAG, "LookupWatts extrapolated high %dw from pos %d, cad %d", watts, targetPosition, cad);
+    return watts;
+  }
+
+  if (rightWattIndex != -1 && rightWattIndex < POWERTABLE_WATT_SIZE - 1) {
+    // Extrapolate using two rightmost points
+    int pos1   = this->tableRow[cadIndex].tableEntry[rightWattIndex].targetPosition;
+    int pos2   = this->tableRow[cadIndex].tableEntry[rightWattIndex + 1].targetPosition;
+    int watts1 = rightWattIndex * POWERTABLE_WATT_INCREMENT;
+    int watts2 = (rightWattIndex + 1) * POWERTABLE_WATT_INCREMENT;
+
+    int watts = watts1 + (watts1 - watts2) * (pos1 - internalPosition) / (pos1 - pos2);
+    SS2K_LOG(ERG_MODE_LOG_TAG, "LookupWatts extrapolated low %dw from pos %d, cad %d", watts, targetPosition, cad);
+    return watts;
+  }
+  SS2K_LOG(ERG_MODE_LOG_TAG, "LookupWatts failed to find a value for pos %d, cad %d", targetPosition, cad);
+  return RETURN_ERROR;
 }
 
 // Reset the PowerTable to 0;

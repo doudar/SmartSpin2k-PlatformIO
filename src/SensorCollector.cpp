@@ -43,7 +43,7 @@ void collectAndSet(NimBLEUUID charUUID, NimBLEUUID serviceUUID, NimBLEAddress ad
     }
   }
 
-  if (sensorData->hasPower() && !rtConfig->watts.getSimulate()) {
+  if (sensorData->hasPower() && !rtConfig->watts.getSimulate() && !userConfig->getPTab4Pwr()) {
     if ((charUUID == PELOTON_DATA_UUID) && !((String(userConfig->getConnectedPowerMeter()) == "none") || (String(userConfig->getConnectedPowerMeter()) == "any"))) {
       // Peloton connected but using BLE Power Meter. So skip power for Peloton UUID.
     } else {
