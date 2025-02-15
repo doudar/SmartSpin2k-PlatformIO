@@ -84,7 +84,7 @@ This characteristic allows for reading and writing various user configuration pa
 */
 
 #include <BLE_Common.h>
-#include <ERG_Mode.h>
+#include <Power_Table.h>
 #include <BLE_Custom_Characteristic.h>
 #include <Constants.h>
 

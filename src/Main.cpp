@@ -13,6 +13,7 @@
 #include <HardwareSerial.h>
 #include "FastAccelStepper.h"
 #include "ERG_Mode.h"
+#include "Power_Table.h"
 #include "UdpAppender.h"
 #include "WebsocketAppender.h"
 #include "BLE_Custom_Characteristic.h"
@@ -38,6 +39,8 @@ Boards boards;
 Board currentBoard;
 
 ///////////// Initialize the Config /////////////
+ErgMode* ergMode                 = new ErgMode;
+PowerTable* powerTable           = new PowerTable;
 SS2K *ss2k                       = new SS2K;
 userParameters *userConfig       = new userParameters;
 RuntimeParameters *rtConfig      = new RuntimeParameters;
@@ -190,7 +193,7 @@ void SS2K::maintenanceLoop(void *pvParameters) {
     // Run What used to be in the Stepper Task.
     ss2k->moveStepper();
     // Run what used to be in the ERG Mode Task.
-    powerTable->runERG();
+    ergMode->runERG();
     // Run what used to be in the WebClient Task.
     httpServer.webClientUpdate();
     // If we're in ERG mode, modify shift commands to inc/dec the target watts instead.

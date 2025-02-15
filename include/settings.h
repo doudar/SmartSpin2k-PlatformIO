@@ -257,7 +257,7 @@ const char* const DEFAULT_PASSWORD = "password";
 // #define ERG_GUARDRAILS
 
 //Uncomment to enable the use of the power table for ERG mode.
-//#define ERG_MODE_USE_POWER_TABLE
+#define ERG_MODE_USE_POWER_TABLE
 
 // Uncomment to use the PID controller for ERG mode.
 #define ERG_MODE_USE_PID
