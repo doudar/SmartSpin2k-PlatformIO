@@ -253,6 +253,15 @@ const char* const DEFAULT_PASSWORD = "password";
 
 #define RUNTIMECONFIG_JSON_SIZE 1000 + DEBUG_LOG_BUFFER_SIZE
 
+// Uncomment to use guardrails for ERG mode in the stepper loop.
+// #define ERG_GUARDRAILS
+
+//Uncomment to enable the use of the power table for ERG mode.
+//#define ERG_MODE_USE_POWER_TABLE
+
+// Uncomment to use the PID controller for ERG mode.
+#define ERG_MODE_USE_PID
+
 // PowerTable Version
 #define TABLE_VERSION 6
 
