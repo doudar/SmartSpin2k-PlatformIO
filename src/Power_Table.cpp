@@ -681,7 +681,7 @@ void PowerTable::clean() {
 int downVote(int targetValue, int neighborValue) {
   // calculate diff between target and neighbor
   int delta = abs(targetValue - neighborValue);
-  float penalty;
+  int penalty;
   float penaltyFactor = 0.2;
 
   // currently consistently getting a 0 for neighbor value...
@@ -690,7 +690,7 @@ int downVote(int targetValue, int neighborValue) {
   // we have a few different options for penalty calculations here, will need to test which works best:
 
   // linear function, low agression
-  penalty = delta * penaltyFactor;
+  penalty = round(delta * penaltyFactor);
 
   // quadratic function, high aggression
   // penalty = penaltyFactor * (delta * delta)
@@ -702,9 +702,6 @@ int downVote(int targetValue, int neighborValue) {
   if (penalty > MAX_NEIGHBOR_WEIGHT) {
     penalty = MAX_NEIGHBOR_WEIGHT;
   }
-
-  // round up penalty to make it an int
-  penalty = round(penalty);
 
   SS2K_LOG(POWERTABLE_LOG_TAG, "WEIGHTED DOWNVOTING: Delta: (%d), Penalty: (%f)", delta, penalty);
   return penalty;

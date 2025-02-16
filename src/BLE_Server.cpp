@@ -35,7 +35,7 @@ BLE_Fitness_Machine_Service fitnessMachineService;
 BLE_ss2kCustomCharacteristic ss2kCustomCharacteristic;
 BLE_Device_Information_Service deviceInformationService;
 BLE_Wattbike_Service wattbikeService;
-//BLE_SB20_Service sb20Service;
+// BLE_SB20_Service sb20Service;
 
 void startBLEServer() {
   // Server Setup
@@ -53,12 +53,12 @@ void startBLEServer() {
   ss2kCustomCharacteristic.setupService(spinBLEServer.pServer);
   deviceInformationService.setupService(spinBLEServer.pServer);
   wattbikeService.setupService(spinBLEServer.pServer);  // No callback needed
-  //sb20Service.begin();
+  // sb20Service.begin();
   BLEFirmwareSetup();
-  
+
   // const std::string fitnessData = {0b00000001, 0b00100000, 0b00000000};
   // pAdvertising->setServiceData(FITNESSMACHINESERVICE_UUID, fitnessData);
-  pAdvertising->setName(static_cast<const std::__cxx11::string &>(userConfig->getDeviceName()));
+  pAdvertising->setName(static_cast<const std::__cxx11::string&>(userConfig->getDeviceName()));
   pAdvertising->setMaxInterval(250);
   pAdvertising->setMinInterval(160);
 
@@ -76,7 +76,7 @@ void SpinBLEServer::update() {
   cyclingSpeedCadenceService.update();
   fitnessMachineService.update();
   wattbikeService.parseNemit();  // Changed from update() to parseNemit()
-  ///sb20Service.notify();
+  /// sb20Service.notify();
 }
 
 double SpinBLEServer::calculateSpeed() {
@@ -126,8 +126,7 @@ void SpinBLEServer::updateWheelAndCrankRev() {
 
 // Creating Server Connection Callbacks
 void MyServerCallbacks::onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo) {
-  SS2K_LOG(BLE_SERVER_LOG_TAG, "Bluetooth Remote Client Connected: %s Connected Clients: %d",
-           connInfo.getAddress().toString().c_str(), pServer->getConnectedCount());
+  SS2K_LOG(BLE_SERVER_LOG_TAG, "Bluetooth Remote Client Connected: %s Connected Clients: %d", connInfo.getAddress().toString().c_str(), pServer->getConnectedCount());
 
   if (pServer->getConnectedCount() < CONFIG_BT_NIMBLE_MAX_CONNECTIONS - NUM_BLE_DEVICES) {
     BLEDevice::startAdvertising();
@@ -152,7 +151,7 @@ void MyServerCallbacks::onMTUChange(uint16_t MTU, NimBLEConnInfo& connInfo) {
 }
 
 uint32_t MyServerCallbacks::onPassKeyDisplay() {
-  uint32_t passkey = 123456; // Static passkey for demonstration
+  uint32_t passkey = 123456;  // Static passkey for demonstration
   SS2K_LOG(BLE_SERVER_LOG_TAG, "Server Passkey Display: %u", passkey);
   return passkey;
 }
@@ -166,7 +165,7 @@ void MyServerCallbacks::onAuthenticationComplete(NimBLEConnInfo& connInfo) {
   SS2K_LOG(BLE_SERVER_LOG_TAG, "Secured connection to: %s", connInfo.getAddress().toString().c_str());
 }
 
-bool MyServerCallbacks::onConnParamsUpdateRequest(uint16_t handle, const ble_gap_upd_params *params) {
+bool MyServerCallbacks::onConnParamsUpdateRequest(uint16_t handle, const ble_gap_upd_params* params) {
   SS2K_LOG(BLE_SERVER_LOG_TAG, "Updated Server Connection Parameters for handle: %d", handle);
   return true;
 }
@@ -174,9 +173,7 @@ bool MyServerCallbacks::onConnParamsUpdateRequest(uint16_t handle, const ble_gap
 // END SERVER CALLBACKS
 
 void MyCharacteristicCallbacks::onRead(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) {
-  SS2K_LOG(BLE_SERVER_LOG_TAG, "Read from %s by client: %s",
-           pCharacteristic->getUUID().toString().c_str(),
-           connInfo.getAddress().toString().c_str());
+  SS2K_LOG(BLE_SERVER_LOG_TAG, "Read from %s by client: %s", pCharacteristic->getUUID().toString().c_str(), connInfo.getAddress().toString().c_str());
 }
 
 void MyCharacteristicCallbacks::onWrite(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) {
@@ -188,20 +185,19 @@ void MyCharacteristicCallbacks::onWrite(NimBLECharacteristic* pCharacteristic, N
 }
 
 void MyCharacteristicCallbacks::onStatus(NimBLECharacteristic* pCharacteristic, int code) {
-  //loop through and accumulate the data into a C++ string
-    std::string characteristicValue = pCharacteristic->getValue();
-    std::string logValue;
-    for (size_t i = 0; i < characteristicValue.length(); ++i) {
-      char buf[4];
-      snprintf(buf, sizeof(buf), "%02x ", (unsigned char)characteristicValue[i]);
-      logValue += buf;
-    }
-  
-  SS2K_LOGW(BLE_SERVER_LOG_TAG, "Notification/Indication status code: %d for char: %s Data: %s",
-           code, pCharacteristic->getUUID().toString().c_str(), logValue.c_str());
+  // loop through and accumulate the data into a C++ string
+  std::string characteristicValue = pCharacteristic->getValue();
+  std::string logValue;
+  for (size_t i = 0; i < characteristicValue.length(); ++i) {
+    char buf[4];
+    snprintf(buf, sizeof(buf), "%02x ", (unsigned char)characteristicValue[i]);
+    logValue += buf;
+  }
+
+  SS2K_LOGW(BLE_SERVER_LOG_TAG, "Notification/Indication status code: %d for char: %s Data: %s", code, pCharacteristic->getUUID().toString().c_str(), logValue.c_str());
 }
 
-void MyCharacteristicCallbacks::onSubscribe(NimBLECharacteristic *pCharacteristic, NimBLEConnInfo& connInfo, uint16_t subValue) {
+void MyCharacteristicCallbacks::onSubscribe(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo, uint16_t subValue) {
   String str       = "Client ID: ";
   NimBLEUUID pUUID = pCharacteristic->getUUID();
   str += connInfo.getConnHandle();
@@ -280,8 +276,9 @@ void calculateInstPwrFromHR() {
   SS2K_LOG(BLE_SERVER_LOG_TAG, "Power From HR: %d", avgP);
 }
 
-void logCharacteristic(char *buffer, const size_t bufferCapacity, const byte *data, const size_t dataLength, const NimBLEUUID serviceUUID, const NimBLEUUID charUUID,
-                       const char *format, ...) {
+void logCharacteristic(char* buffer, const size_t bufferCapacity, const byte* data, const size_t dataLength, const NimBLEUUID serviceUUID, const NimBLEUUID charUUID,
+                       const char* format, ...) {
+#ifdef DEBUG_BLE_TX_RX
   int bufferLength = ss2k_log_hex_to_buffer(data, dataLength, buffer, 0, bufferCapacity);
   bufferLength += snprintf(buffer + bufferLength, bufferCapacity - bufferLength, "-> %s | %s | ", serviceUUID.toString().c_str(), charUUID.toString().c_str());
   va_list args;
@@ -292,5 +289,6 @@ void logCharacteristic(char *buffer, const size_t bufferCapacity, const byte *da
   SS2K_LOG(BLE_SERVER_LOG_TAG, "%s", buffer);
 #ifdef USE_TELEGRAM
   SEND_TO_TELEGRAM(String(buffer));
+#endif
 #endif
 }

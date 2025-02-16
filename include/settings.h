@@ -350,6 +350,9 @@ const char* const DEFAULT_PASSWORD = "password";
 // Uncomment to enable HR->PWR enhanced torquetable debugging.
 // #define DEBUG_TORQUETABLE
 
+// Uncomment to enable BLE_TX_RX Logging
+// #define DEBUG_BLE_TX_RX
+
 #ifdef USE_TELEGRAM
 // Max number of telegram messages to send per session
 #define MAX_TELEGRAM_MESSAGES 1
