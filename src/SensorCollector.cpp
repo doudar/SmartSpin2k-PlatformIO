@@ -43,7 +43,7 @@ void collectAndSet(NimBLEUUID charUUID, NimBLEUUID serviceUUID, NimBLEAddress ad
     }
   }
 
-  if (sensorData->hasPower() && !rtConfig->watts.getSimulate()) {
+  if (sensorData->hasPower() && !rtConfig->watts.getSimulate() && !userConfig->getPTab4Pwr()) {
     if ((charUUID == PELOTON_DATA_UUID) && !((String(userConfig->getConnectedPowerMeter()) == "none") || (String(userConfig->getConnectedPowerMeter()) == "any"))) {
       // Peloton connected but using BLE Power Meter. So skip power for Peloton UUID.
     } else {
@@ -75,13 +75,15 @@ void collectAndSet(NimBLEUUID charUUID, NimBLEUUID serviceUUID, NimBLEAddress ad
   logBufLength += snprintf(logBuf + logBufLength, kLogBufMaxLength - logBufLength, " POS(%d)", ss2k->getCurrentPosition());
   strncat(logBuf + logBufLength, " ]", kLogBufMaxLength - logBufLength);
 
-  // Peloton data screams, so only log one per second.
+// Peloton data screams, so only log one per second.
+#ifdef DEBUG_BLE_TX_RX
   static long int lastTime = millis();
   if ((charUUID == PELOTON_DATA_UUID) && (millis() - lastTime < 1000)) return;
 
   SS2K_LOG(BLE_COMMON_LOG_TAG, "%s", logBuf);
 
   if (charUUID == PELOTON_DATA_UUID) lastTime = millis();
+#endif
 
 #ifdef USE_TELEGRAM
   SEND_TO_TELEGRAM(String(logBuf));
