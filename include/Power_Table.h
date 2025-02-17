@@ -105,6 +105,8 @@ class PowerTable {
   // enters data into power table 
   void enterData(int i, int j, int pos); 
 
+  void downVoteData(int i, int j, float target, int neighbor); 
+
   // returns incline for wattTarget. Null if not found.
   int32_t lookup(int watts, int cad);
 
