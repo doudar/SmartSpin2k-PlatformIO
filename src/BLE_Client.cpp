@@ -202,7 +202,7 @@ bool SpinBLEClient::connectToServer() {
   NimBLEUUID charUUID;
 
   int successful = 0;
-  const NimBLEAdvertisedDevice *myDevice;
+  const NimBLEAdvertisedDevice *myDevice = nullptr;
   int device_number = -1;
 
   for (int i = 0; i < NUM_BLE_DEVICES; i++) {
@@ -500,7 +500,6 @@ void SpinBLEClient::scanProcess(int duration) {
   if (pBLEScan->isScanning()) {
     return;
   }
-  pBLEScan->clearResults();
   pBLEScan->start(duration, false, true);
   this->dontBlockScan = false;
 }
@@ -546,7 +545,7 @@ void ScanCallbacks::onScanEnd(const NimBLEScanResults &results, int reason) {
 
   String output;
   serializeJson(devices, output);
-  // SS2K_LOG(BLE_CLIENT_LOG_TAG, "Bluetooth Client Found Devices: %s", output.c_str());
+  //SS2K_LOG(BLE_CLIENT_LOG_TAG, "Found Devices: %s", output.c_str());
 #ifdef USE_TELEGRAM
   SEND_TO_TELEGRAM("Bluetooth Client Found Devices: " + output);
 #endif

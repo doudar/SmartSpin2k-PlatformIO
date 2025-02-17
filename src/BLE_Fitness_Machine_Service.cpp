@@ -19,8 +19,6 @@ BLE_Fitness_Machine_Service::BLE_Fitness_Machine_Service()
       fitnessMachineInclinationRange(nullptr),
       fitnessMachineTrainingStatus(nullptr) {}
 
-uint8_t ftmsTrainingStatus[2] = {0x00, 0x00};  // Initialize to Other state
-
 void BLE_Fitness_Machine_Service::setupService(NimBLEServer *pServer, MyCharacteristicCallbacks *chrCallbacks) {
   // Resistance, IPower, HeartRate
   uint8_t ftmsResistanceLevelRange[6] = {0x01, 0x00, 0x64, 0x00, 0x01, 0x00};  // 1:100 increment 1
@@ -113,9 +111,10 @@ void BLE_Fitness_Machine_Service::processFTMSWrite() {
     if (rxValue == "") {
       return;
     }
-    uint8_t returnValue[3]             = {FitnessMachineControlPointProcedure::ResponseCode, (uint8_t)rxValue[0], FitnessMachineControlPointResultCode::OpCodeNotSupported};
+    std::vector<uint8_t> returnValue   = {FitnessMachineControlPointProcedure::ResponseCode, (uint8_t)rxValue[0], FitnessMachineControlPointResultCode::OpCodeNotSupported};
     BLECharacteristic *pCharacteristic = NimBLEDevice::getServer()->getServiceByUUID(FITNESSMACHINESERVICE_UUID)->getCharacteristic(FITNESSMACHINECONTROLPOINT_UUID);
     std::vector<uint8_t> ftmsStatus    = {FitnessMachineStatus::ReservedForFutureUse};
+    std::vector<uint8_t> ftmsTrainingStatus = {0x00, FitnessMachineTrainingStatus::Other};
 
     if (rxValue.length() >= 1) {
       uint8_t *pData            = reinterpret_cast<uint8_t *>(&rxValue[0]);
@@ -268,26 +267,9 @@ void BLE_Fitness_Machine_Service::processFTMSWrite() {
       ftmsStatus            = {FitnessMachineStatus::StartedOrResumedByUser};
       ftmsTrainingStatus[1] = FitnessMachineTrainingStatus::Other;  // 0x00;
     }
-    fitnessMachineStatusCharacteristic->setValue(ftmsStatus.data(), ftmsStatus.size());
-    //SS2K_LOG(FMTS_SERVER_LOG_TAG, "Calling notify %s -> %02x %02x", fitnessMachineStatusCharacteristic->getUUID().toString().c_str(), ftmsStatus[0], ftmsStatus[1]);
-    std::string characteristicValue = pCharacteristic->getValue();
-    std::string logValue;
-    for (size_t i = 0; i < characteristicValue.length(); ++i) {
-      char buf[4];
-      snprintf(buf, sizeof(buf), "%02x ", (unsigned char)characteristicValue[i]);
-      logValue += buf;
-    }
-    SS2K_LOG(FMTS_SERVER_LOG_TAG, "Calling notify %s -> %s", pCharacteristic->getUUID().toString().c_str(), logValue.c_str());
-    fitnessMachineControlPoint->setValue(returnValue, 3);
-    fitnessMachineTrainingStatus->setValue(ftmsTrainingStatus, 2);
-    fitnessMachineControlPoint->indicate();
-    /* only notify if the value has changed
-    static uint8_t _lastTrainingStatus[2] = {0x00, 0x00};
-    if (memcmp(_lastTrainingStatus, ftmsTrainingStatus, 2) != 0) {
-      memcpy(_lastTrainingStatus, ftmsTrainingStatus, 2);
-      fitnessMachineTrainingStatus->notify();
-    } */
-    fitnessMachineStatusCharacteristic->notify();
+    fitnessMachineControlPoint->indicate(returnValue.data(), returnValue.size());
+    fitnessMachineTrainingStatus->notify(ftmsTrainingStatus.data(), ftmsTrainingStatus.size());
+    fitnessMachineStatusCharacteristic->notify(ftmsStatus.data(), ftmsStatus.size());
   }
 }
 
